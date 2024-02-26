@@ -17,11 +17,9 @@ from esphome.const import (
     CONF_ENABLE_PIN,
     CONF_OFFSET_HEIGHT,
     CONF_OFFSET_WIDTH,
-    CONF_INVERT_COLORS,
     CONF_MIRROR_X,
     CONF_MIRROR_Y,
     CONF_SWAP_XY,
-    CONF_COLOR_ORDER,
     CONF_TRANSFORM,
 )
 
@@ -32,12 +30,7 @@ axs15231_ns = cg.esphome_ns.namespace("axs15231")
 AXS15231Component = axs15231_ns.class_(
     "AXS15231Display", display.Display, display.DisplayBuffer, cg.Component, spi.SPIDevice
 )
-ColorOrder = display.display_ns.enum("ColorMode")
 
-COLOR_ORDERS = {
-    "RGB": ColorOrder.COLOR_ORDER_RGB,
-    "BGR": ColorOrder.COLOR_ORDER_BGR,
-}
 DATA_PIN_SCHEMA = pins.gpio_pin_schema(
     {
         CONF_OUTPUT: True,
@@ -68,10 +61,6 @@ CONFIG_SCHEMA = cv.All(
                         cv.Optional(CONF_SWAP_XY, default=False): cv.boolean,
                     }
                 ),
-                cv.Optional(CONF_COLOR_ORDER, default="RGB"): cv.one_of(
-                    *COLOR_ORDERS.keys(), upper=True
-                ),
-                cv.Optional(CONF_INVERT_COLORS, default=False): cv.boolean,
                 cv.Optional(CONF_RESET_PIN): pins.gpio_output_pin_schema,
                 cv.Optional(CONF_ENABLE_PIN): pins.gpio_output_pin_schema,
                 cv.Optional(CONF_BRIGHTNESS, default=0xD0): cv.int_range(
@@ -96,8 +85,6 @@ async def to_code(config):
     await display.register_display(var, config)
     await spi.register_spi_device(var, config)
 
-    cg.add(var.set_color_mode(COLOR_ORDERS[config[CONF_COLOR_ORDER]]))
-    cg.add(var.set_invert_colors(config[CONF_INVERT_COLORS]))
     cg.add(var.set_brightness(config[CONF_BRIGHTNESS]))
     if enable_pin := config.get(CONF_ENABLE_PIN):
         enable = await cg.gpio_pin_expression(enable_pin)
