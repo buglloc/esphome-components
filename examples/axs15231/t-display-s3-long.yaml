@@ -1,0 +1,57 @@
+esphome:
+  name: t-display-s3-long
+  friendly_name: LilyGo-T-Display-Long
+  platformio_options:
+    upload_speed: 921600
+    build_unflags: -Werror=all
+    board_build.flash_mode: dio
+    board_build.f_flash: 80000000L
+    board_build.f_cpu: 240000000L
+
+psram:
+ mode: octal
+ speed: 80MHz
+
+esp32:
+  board: esp32-s3-devkitc-1
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+
+external_components:
+  - source: github://buglloc/esphome-components
+    components: [ axs15231 ]
+
+spi:
+  id: quad_spi
+  clk_pin: 17
+  data_pins:
+    - 13
+    - 18
+    - 21
+    - 14
+
+display:
+  - platform: axs15231
+    dimensions:
+      height: 640
+      width: 180
+    transform:
+      mirror_x: true
+      mirror_y: true
+      swap_xy: false
+    color_order: rgb
+    brightness: 70
+    cs_pin: 12
+    reset_pin: 16
+    enable_pin: 1
+    #rotation: 180
+    lambda: |-
+      auto rand_col = Color::random_color();
+      it.filled_rectangle(0, 0, it.get_width(), it.get_height(), rand_col);
+      it.print(it.get_width()/2, it.get_height()/2, id(roboto), TextAlign::CENTER, "ESPHome");
+
+font:
+  - file: "gfonts://Roboto"
+    id: roboto
+    size: 40
