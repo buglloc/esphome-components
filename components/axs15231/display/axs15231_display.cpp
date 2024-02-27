@@ -4,7 +4,7 @@
 #ifdef USE_ESP_IDF
 
 namespace {
-  constexpr static const char *const TAG = "display.axs15231";
+  constexpr static const char *const TAG = "axs15231.display";
 
   typedef struct
   {
@@ -13,7 +13,7 @@ namespace {
       uint8_t len;
   } lcd_cmd_t;
 
-  const static lcd_cmd_t AXS15231B_QSPI_INIT_NEW[] = {
+  const static lcd_cmd_t AXS_QSPI_INIT_NEW[] = {
     {0x28, {0x00}, 0x40},
     {0x10, {0x00}, 0x80},
     {0xbb, {0x00,0x00,0x00,0x00,0x00,0x00,0x5a,0xa5}, 0x08},
@@ -260,8 +260,8 @@ void AXS15231Display::set_madctl_() {
 }
 
 void AXS15231Display::init_lcd_() {
-  const lcd_cmd_t *lcd_init = AXS15231B_QSPI_INIT_NEW;
-  for (int i = 0; i < sizeof(AXS15231B_QSPI_INIT_NEW) / sizeof(lcd_cmd_t); ++i) {
+  const lcd_cmd_t *lcd_init = AXS_QSPI_INIT_NEW;
+  for (int i = 0; i < sizeof(AXS_QSPI_INIT_NEW) / sizeof(lcd_cmd_t); ++i) {
     this->write_command_(lcd_init[i].cmd, (uint8_t *)lcd_init[i].data, lcd_init[i].len & 0x3f);
     if (lcd_init[i].len & 0x80)
         delay(150);

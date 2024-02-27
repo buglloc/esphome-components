@@ -1,5 +1,6 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
+
 from esphome import pins
 from esphome.components import (
     spi,
@@ -22,11 +23,11 @@ from esphome.const import (
     CONF_SWAP_XY,
     CONF_TRANSFORM,
 )
+from .. import axs15231_ns
 
 
 DEPENDENCIES = ["spi"]
 
-axs15231_ns = cg.esphome_ns.namespace("axs15231")
 AXS15231Component = axs15231_ns.class_(
     "AXS15231Display", display.Display, display.DisplayBuffer, cg.Component, spi.SPIDevice
 )
@@ -71,7 +72,7 @@ CONFIG_SCHEMA = cv.All(
             spi.spi_device_schema(
                 cs_pin_required=False,
                 default_mode="MODE0",
-                default_data_rate=10e6,
+                default_data_rate=20e6,
                 quad=True,
             )
         )
