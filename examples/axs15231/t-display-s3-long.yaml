@@ -36,20 +36,16 @@ display:
     dimensions:
       height: 640
       width: 180
-    transform:
-      mirror_x: true
-      mirror_y: true
-      swap_xy: false
-    color_order: rgb
-    brightness: 70
+    auto_clear_enabled: false
     cs_pin: 12
     reset_pin: 16
-    enable_pin: 1
-    #rotation: 180
+    backlight_pin: 1
+    rotation: 90
     lambda: |-
       auto rand_col = Color::random_color();
-      it.filled_rectangle(0, 0, it.get_width(), it.get_height(), rand_col);
-      it.print(it.get_width()/2, it.get_height()/2, id(roboto), TextAlign::CENTER, "ESPHome");
+      it.fill(rand_col);
+      it.print(it.get_width()/2, it.get_height()/2-20, id(font_title), TextAlign::CENTER, "ESPHome");
+      it.print(it.get_width()/2, it.get_height()/2+20, id(font_std), TextAlign::CENTER, "@UTBDK");
 
 font:
   - file: "gfonts://Roboto"

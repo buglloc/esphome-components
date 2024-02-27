@@ -15,10 +15,12 @@ namespace esphome {
 namespace axs15231 {
 
 class AXS15231Display : public display::DisplayBuffer,
-                   public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRST, spi::CLOCK_POLARITY_LOW, spi::CLOCK_PHASE_LEADING,
-                                         spi::DATA_RATE_20MHZ> {
+                        public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRST, spi::CLOCK_POLARITY_LOW,
+                                              spi::CLOCK_PHASE_LEADING, spi::DATA_RATE_40MHZ> {
  public:
   void update() override;
+
+  float get_setup_priority() const override;
 
   void setup() override;
 
@@ -29,13 +31,7 @@ class AXS15231Display : public display::DisplayBuffer,
   // Display overrides
 
   /// Fill the entire screen with the given color.
-  // virtual void fill(Color color);
-
-  /// Get the width of the image in pixels with rotation applied.
-  int get_width() override;
-
-  /// Get the height of the image in pixels with rotation applied.
-  int get_height() override;
+  virtual void fill(Color color);
 
   // Get the type of display that the buffer corresponds to.
   display::DisplayType get_display_type() override;
@@ -43,10 +39,11 @@ class AXS15231Display : public display::DisplayBuffer,
   // DisplayBuffer overrides
   int get_width_internal() override;
   int get_height_internal() override;
+  uint32_t get_buffer_length_();
 
   void set_reset_pin(GPIOPin *reset_pin);
 
-  void set_enable_pin(GPIOPin *enable_pin);
+  void set_backlight_pin(GPIOPin *backlight_pin);
 
   void set_width(uint16_t width);
 
@@ -63,31 +60,37 @@ class AXS15231Display : public display::DisplayBuffer,
   void set_offsets(int16_t offset_x, int16_t offset_y);
 
  protected:
+  void setup_pins_();
+
+  void set_madctl_();
+
+  void init_lcd_();
+
+  void reset_();
+
+  void display_();
+
   void write_command_(uint8_t cmd, const uint8_t *bytes, size_t len);
 
   void write_command_(uint8_t cmd, uint8_t data);
 
   void write_command_(uint8_t cmd);
 
-  void reset_params_(bool ready = false);
-
-  void write_init_sequence_();
-
   void set_addr_window_(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
 
   void draw_absolute_pixel_internal(int x, int y, Color color) override;
 
-  void draw_pixels_at(int x_start, int y_start, int w, int h, const uint8_t *ptr, display::ColorOrder order,
-                      display::ColorBitness bitness, bool big_endian, int x_offset, int y_offset, int x_pad) override;
-
-  private:
+ private:
   GPIOPin *reset_pin_{nullptr};
-  GPIOPin *enable_pin_{nullptr};
+  GPIOPin *backlight_pin_{nullptr};
   uint16_t x_low_{0};
   uint16_t y_low_{0};
   uint16_t x_high_{0};
   uint16_t y_high_{0};
   bool setup_complete_{};
+
+  bool prossing_update_ = false;
+  bool need_update_ = false;
 
   size_t width_{};
   size_t height_{};
@@ -103,4 +106,5 @@ class AXS15231Display : public display::DisplayBuffer,
 
 }  // namespace axs15231
 }  // namespace esphome
+
 #endif

@@ -14,7 +14,7 @@ from esphome.const import (
     CONF_HEIGHT,
     CONF_LAMBDA,
     CONF_BRIGHTNESS,
-    CONF_ENABLE_PIN,
+    CONF_BACKLIGHT_PIN,
     CONF_OFFSET_HEIGHT,
     CONF_OFFSET_WIDTH,
     CONF_MIRROR_X,
@@ -62,7 +62,7 @@ CONFIG_SCHEMA = cv.All(
                     }
                 ),
                 cv.Optional(CONF_RESET_PIN): pins.gpio_output_pin_schema,
-                cv.Optional(CONF_ENABLE_PIN): pins.gpio_output_pin_schema,
+                cv.Optional(CONF_BACKLIGHT_PIN): pins.gpio_output_pin_schema,
                 cv.Optional(CONF_BRIGHTNESS, default=0xD0): cv.int_range(
                     0, 0xFF, min_included=True, max_included=True
                 ),
@@ -86,9 +86,9 @@ async def to_code(config):
     await spi.register_spi_device(var, config)
 
     cg.add(var.set_brightness(config[CONF_BRIGHTNESS]))
-    if enable_pin := config.get(CONF_ENABLE_PIN):
-        enable = await cg.gpio_pin_expression(enable_pin)
-        cg.add(var.set_enable_pin(enable))
+    if backlight_pin := config.get(CONF_BACKLIGHT_PIN):
+        backlight = await cg.gpio_pin_expression(backlight_pin)
+        cg.add(var.set_backlight_pin(backlight))
 
     if reset_pin := config.get(CONF_RESET_PIN):
         reset = await cg.gpio_pin_expression(reset_pin)
