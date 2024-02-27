@@ -9,8 +9,8 @@ esphome:
     board_build.f_cpu: 240000000L
 
 psram:
- mode: octal
- speed: 80MHz
+  mode: octal
+  speed: 80MHz
 
 esp32:
   board: esp32-s3-devkitc-1
@@ -20,10 +20,10 @@ esp32:
 
 external_components:
   - source: github://buglloc/esphome-components
-    components: [ axs15231 ]
+    components: [axs15231]
 
 spi:
-  id: quad_spi
+  id: display_qspi
   clk_pin: 17
   data_pins:
     - 13
@@ -31,23 +31,61 @@ spi:
     - 21
     - 14
 
-display:
-  - platform: axs15231
-    dimensions:
-      height: 640
-      width: 180
-    auto_clear_enabled: false
-    cs_pin: 12
-    reset_pin: 16
-    backlight_pin: 1
-    rotation: 90
-    lambda: |-
-      auto rand_col = Color::random_color();
-      it.fill(rand_col);
-      it.print(it.get_width()/2, it.get_height()/2-20, id(font_title), TextAlign::CENTER, "ESPHome");
-      it.print(it.get_width()/2, it.get_height()/2+20, id(font_std), TextAlign::CENTER, "@UTBDK");
+i2c:
+  sda: 15
+  scl: 10
+  id: touchscreen_bus
 
 font:
   - file: "gfonts://Roboto"
-    id: roboto
+    id: font_std
     size: 40
+    glyphs: "!\"%()+=,-_.:°0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz/\\[]|&@#'"
+  - file: "gfonts://Roboto@700"
+    id: font_title
+    size: 40
+    glyphs: "!\"%()+=,-_.:°0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz/\\[]|&@#'"
+
+globals:
+  - id: bgcolor
+    type: Color
+    initial_value: "Color::random_color()"
+
+display:
+  - platform: axs15231
+    id: main_display
+    spi_id: display_qspi
+    dimensions:
+      height: 640
+      width: 180
+    cs_pin: 12
+    reset_pin: 16
+    backlight_pin: 1
+    transform:
+      swap_xy: false
+    rotation: 90
+    auto_clear_enabled: false
+    lambda: |-
+      it.fill(id(bgcolor));
+      it.print(it.get_width()/2, it.get_height()/2-20, id(font_title), TextAlign::CENTER, "ESPHome");
+      it.print(it.get_width()/2, it.get_height()/2+20, id(font_std), TextAlign::CENTER, "@UTBDK");
+
+touchscreen:
+  - platform: axs15231
+    id: main_touch
+    display: main_display
+    i2c_id: touchscreen_bus
+    transform:
+      swap_xy: true
+    on_touch:
+      - lambda: |-
+          Color newColor;
+          do { newColor =  Color::random_color(); } while (newColor == id(bgcolor));
+          id(bgcolor) = newColor;
+
+          ESP_LOGI("cal", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
+            touch.x,
+            touch.y,
+            touch.x_raw,
+            touch.y_raw
+          );
