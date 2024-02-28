@@ -13,7 +13,12 @@ You can take a look at samples of usage of those components in [examples](exampl
 
 ## [axs15231](components/axs15231) display (wip)
 
-[AXS15231](datasheet/AXS15231_Datasheet_V0.4_20221108.pdf) Display used (and tested) on [T-Display S3 Long](https://www.lilygo.cc/products/t-display-s3-long).
+[AXS15231](datasheet/AXS15231_Datasheet_V0.4_20221108.pdf) Display used (and tested) on [T-Display S3 Long](https://www.lilygo.cc/products/t-display-s3-long):
+![axs15231_demo](docs/images/axs15231_demo.jpg)
+
+Requirements:
+  - ESP-IDF framework so far
+  - [Quad SPI](https://github.com/esphome/esphome/pull/5925)
 
 Minimal example:
 ```yaml
