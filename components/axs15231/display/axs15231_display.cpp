@@ -82,8 +82,6 @@ namespace esphome {
 namespace axs15231 {
 
 void AXS15231Display::update() {
-  const uint32_t ms = millis();
-
   if (this->prossing_update_) {
     this->need_update_ = true;
     return;
@@ -96,8 +94,6 @@ void AXS15231Display::update() {
   } while (this->need_update_);
   this->prossing_update_ = false;
   this->display_();
-
-  ESP_LOGW(TAG, "update takes: %dms", millis() - ms);
 }
 
 float AXS15231Display::get_setup_priority() const {
