@@ -6,10 +6,6 @@
 #include "esphome/components/spi/spi.h"
 #include "esphome/components/display/display.h"
 #include "esphome/components/display/display_buffer.h"
-#include "esphome/components/display/display_color_utils.h"
-#include "esp_lcd_panel_ops.h"
-
-#include "esp_lcd_panel_rgb.h"
 
 namespace esphome {
 namespace axs15231 {
@@ -102,8 +98,6 @@ class AXS15231Display : public display::DisplayBuffer,
   bool mirror_x_{};
   bool mirror_y_{};
   uint8_t brightness_{0xD0};
-
-  esp_lcd_panel_handle_t handle_{};
 };
 
 }  // namespace axs15231

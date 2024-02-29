@@ -1,9 +1,9 @@
 #pragma once
 
+#include "esphome/core/helpers.h"
+
 namespace esphome {
 namespace axs15231 {
-
-constexpr static const char *const TAG = "axs15231.display";
 
 static const uint8_t MADCTL_MY  = 0x80;   ///< Bit 7 Bottom to top
 static const uint8_t MADCTL_MX  = 0x40;   ///< Bit 6 Right to left
