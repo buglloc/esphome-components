@@ -70,6 +70,8 @@ class AXS15231Display : public display::DisplayBuffer,
 
   void display_();
 
+  void invalidate_();
+
   void write_command_(uint8_t cmd, const uint8_t *bytes, size_t len);
 
   void write_command_(uint8_t cmd, uint8_t data);
