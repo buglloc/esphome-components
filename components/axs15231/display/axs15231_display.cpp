@@ -1,6 +1,8 @@
 #include "axs15231_display.h"
-#include "defines.h"
+#include "axs15231_defines.h"
+
 #include "esphome/core/log.h"
+#include "esphome/components/display/display_color_utils.h"
 
 #ifdef USE_ESP_IDF
 
@@ -8,6 +10,7 @@ namespace esphome {
 namespace axs15231 {
 
 namespace {
+  constexpr static const char *const TAG = "axs15231.display";
 
   typedef struct
   {
