@@ -8,6 +8,7 @@ namespace esphome {
 namespace axs15231 {
 
 namespace {
+
   typedef struct
   {
       uint8_t cmd;
@@ -104,19 +105,13 @@ void AXS15231Display::fill(Color color) {
   if (((uint8_t) (new_color >> 8)) == ((uint8_t) new_color)) {
     // Upper and lower is equal can use quicker memset operation
     memset(this->buffer_, (uint8_t) new_color, this->get_buffer_length_());
-    return;
+  } else {
+    // Slower set of both buffers
+    for (uint32_t i = 0; i < this->get_buffer_length_(); i = i + 2) {
+      this->buffer_[i] = (uint8_t) (new_color >> 8);
+      this->buffer_[i + 1] = (uint8_t) new_color;
+    }
   }
-
-  // Slower set of both buffers
-  for (uint32_t i = 0; i < this->get_buffer_length_(); i = i + 2) {
-    this->buffer_[i] = (uint8_t) (new_color >> 8);
-    this->buffer_[i + 1] = (uint8_t) new_color;
-  }
-
-  // Use hw fill to speedup update loop
-  // uint8_t fill_buff[] = {100, 100, 100};
-  // this->write_command_(AXS_LCD_RAWFILL, fill_buff, 3);
-  // this->invalidate_();
 }
 
 display::DisplayType AXS15231Display::get_display_type() {
@@ -250,10 +245,10 @@ void AXS15231Display::set_addr_window_(uint16_t x1, uint16_t y1, uint16_t x2, ui
   y2 += this->offset_y_;
   put16_be(buf, x1);
   put16_be(buf + 2, x2);
-  this->write_command_(AXS_LCD_CASET, buf, sizeof buf);
+  this->write_command_(AXS_LCD_CASET, buf, sizeof(buf));
   put16_be(buf, y1);
   put16_be(buf + 2, y2);
-  this->write_command_(AXS_LCD_RASET, buf, sizeof buf);
+  this->write_command_(AXS_LCD_RASET, buf, sizeof(buf));
 }
 
 void AXS15231Display::display_() {
@@ -264,10 +259,22 @@ void AXS15231Display::display_() {
   // we will only update the changed rows to the display
   size_t const w = this->x_high_ - this->x_low_ + 1;
   size_t const h = this->y_high_ - this->y_low_ + 1;
-  this->set_addr_window_(this->x_low_, this->y_low_, this->width_ - 1, this->y_high_);
+  size_t const x_pad = this->get_width_internal() - w - this->x_low_;
+  this->set_addr_window_(this->x_low_, this->y_low_, this->x_high_, this->y_high_);
 
   this->enable();
-  this->write_cmd_addr_data(8, 0x32, 24, 0x2C00, this->buffer_, w * h * 2, 4);
+
+  if (this->x_low_ == 0 && this->y_low_ == 0 && x_pad == 0) {
+    this->write_cmd_addr_data(8, 0x32, 24, 0x2C00, this->buffer_, w * h * 2, 4);
+  } else {
+    this->write_cmd_addr_data(8, 0x32, 24, 0x2C00, nullptr, 0, 4);
+    size_t stride = this->x_low_ + w + x_pad;
+    for (int y = 0; y != h; y++) {
+      size_t offset = ((y + this->y_low_) * stride + this->x_low_);
+      this->write_cmd_addr_data(0, 0, 0, 0, this->buffer_ + offset * 2, w * 2, 4);
+    }
+  }
+
   this->disable();
 
   this->invalidate_();

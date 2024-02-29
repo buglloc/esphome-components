@@ -10,7 +10,7 @@ esphome:
 
 psram:
   mode: octal
-  speed: 80MHz
+  speed: 120MHz
 
 esp32:
   board: esp32-s3-devkitc-1
