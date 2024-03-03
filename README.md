@@ -50,3 +50,4 @@ display:
 ```
 
 See [full example](examples/axs15231/t-display-s3-long.yaml) in [examples](examples) folder.
+Post about: [ESPHome: T-Display S3 Long](https://ut.buglloc.com/iot/esphome/t-display-s3-long-esphome/)
