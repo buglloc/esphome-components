@@ -1,15 +1,28 @@
 #include "axs15231_touchscreen.h"
-#include "axs15231_defines.h"
 
 #include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
+
+
+#define I2C_ERROR_CHECK(err) \
+  if ((err) != i2c::ERROR_OK) { \
+    this->status_set_warning("I2C communication failed"); \
+    return; \
+  }
 
 namespace esphome {
 namespace axs15231 {
 
 namespace {
-  constexpr static const char *const TAG = "axs15231.touchscreen";
-  constexpr static const uint8_t AXS_READ_TOUCHPAD[11] = {0xb5, 0xab, 0xa5, 0x5a, 0x0, 0x0, 0x0, 0x8};
+  const char *const TAG = "axs15231.touchscreen";
+
+  constexpr uint8_t AXS_TOUCH_POINT_LEN     = 0x06;
+  constexpr uint8_t AXS_TOUCH_BUF_HEAD_LEN  = 0x02;
+
+  constexpr uint8_t AXS_TOUCH_EVENT_TOUCH   = 0x08;
+  constexpr uint8_t AXS_TOUCH_EVENT_LEAVE   = 0x04;
+
+  constexpr const uint8_t AXS_READ_TOUCHPAD[11] = { 0xb5, 0xab, 0xa5, 0x5a, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00 };
 } // anonymous namespace
 
 void AXS15231Touchscreen::setup() {
@@ -17,38 +30,59 @@ void AXS15231Touchscreen::setup() {
 
   if (this->reset_pin_ != nullptr) {
     this->reset_pin_->setup();
-    this->reset_pin_->digital_write(true);
-    delay(2);
     this->reset_pin_->digital_write(false);
-    delay(10);
+    delay(5);
     this->reset_pin_->digital_write(true);
-    delay(2);
+    delay(10);
   }
 
-  this->x_raw_max_ = this->display_->get_width();
-  this->y_raw_max_ = this->display_->get_height();
+  if (this->interrupt_pin_ != nullptr) {
+    this->interrupt_pin_->pin_mode(gpio::FLAG_INPUT);
+    this->interrupt_pin_->setup();
+    this->attach_interrupt_(this->interrupt_pin_, gpio::INTERRUPT_FALLING_EDGE);
+  }
+
+  this->x_raw_max_ = this->display_->get_native_width();
+  this->y_raw_max_ = this->display_->get_native_height();
   ESP_LOGCONFIG(TAG, "AXS15231 Touchscreen setup complete");
 }
 
 void AXS15231Touchscreen::update_touches() {
-  i2c::ErrorCode err;
-  bool touched = false;
-  uint8_t buff[AXS_TOUCH_DATA_SIZE];
-  u_int16_t x, y;
+  i2c::ErrorCode err; 
+  uint8_t data[AXS_TOUCH_BUF_HEAD_LEN + AXS_TOUCH_POINT_LEN] = {0};
 
   err = this->write(AXS_READ_TOUCHPAD, sizeof(AXS_READ_TOUCHPAD), false);
   I2C_ERROR_CHECK(err);
 
-  err = this->read(buff, AXS_TOUCH_DATA_SIZE);
+  err = this->read(data, sizeof(data));
   I2C_ERROR_CHECK(err);
 
-  x = AXS_GET_POINT_X(buff, 0);
-  y = AXS_GET_POINT_Y(buff, 0);
+  this->status_clear_warning();
 
-  if ((x == 0 && y == 0) || AXS_GET_GESTURE_TYPE(buff) != 0) {
+  /*
+  Read 8-bit touch information:
+    0 NULL
+    1 Number of fingers touched
+    2 [High 4 bits: Event]+[Low 4 bits: High 4 bits of Y-coordinate]
+    3 Low 4 bits of Y-coordinate
+    4 [High 4 bits: NULL]+[Low 4 bits: High 4 bits of X-coordinate]
+    5 Low 4 bits of X-coordinate
+    6 NULL
+    7 NULL
+  */
+  uint8_t fingers = data[1];
+  if (fingers == 0) {
     return;
   }
 
+  uint8_t touchEvent = data[2] >> 4;
+  if (touchEvent != AXS_TOUCH_EVENT_TOUCH) {
+    return;
+  }
+
+  // TODO(buglloc): support more than one touch points?
+  uint16_t x = encode_uint16(data[4] & 0xF, data[5]);
+  uint16_t y = this->y_raw_max_ - encode_uint16(data[2] & 0xF, data[3]);
   this->add_raw_touch_position_(0, x, y);
 }
 
@@ -56,6 +90,7 @@ void AXS15231Touchscreen::dump_config() {
   ESP_LOGCONFIG(TAG, "AXS15231 Touchscreen:");
   LOG_I2C_DEVICE(this);
   LOG_PIN(" Reset Pin: ", this->reset_pin_);
+  LOG_PIN(" Interrupt Pin: ", this->interrupt_pin_);
   ESP_LOGCONFIG(TAG, "  X min: %d", this->x_raw_min_);
   ESP_LOGCONFIG(TAG, "  X max: %d", this->x_raw_max_);
   ESP_LOGCONFIG(TAG, "  Y min: %d", this->y_raw_min_);

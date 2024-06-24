@@ -62,8 +62,6 @@ display:
     cs_pin: 12
     reset_pin: 16
     backlight_pin: 1
-    transform:
-      swap_xy: false
     rotation: 90
     auto_clear_enabled: false
     lambda: |-
@@ -76,8 +74,6 @@ touchscreen:
     id: main_touch
     display: main_display
     i2c_id: i2c_bus
-    transform:
-      swap_xy: true
     on_touch:
       - lambda: |-
           Color newColor;
