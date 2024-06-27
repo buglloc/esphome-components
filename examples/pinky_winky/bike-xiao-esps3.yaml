@@ -1,0 +1,81 @@
+esphome:
+  name: xiao-s3-pinky-winky
+  friendly_name: XiaoS3PinkyWinky
+  platformio_options:
+    upload_speed: 460800
+    build_unflags: -Werror=all
+    board_build.f_flash: 80000000L
+    board_build.f_cpu: 240000000L
+    # something is broken in the old (=current for esphome) platform version
+    board_build.flash_mode: dio
+
+external_components:
+  - source: github://buglloc/esphome-components
+    components: [ pinky_winky ]
+
+esp32:
+  board: esp32-s3-devkitc-1
+  flash_size: 8MB
+  framework:
+    type: esp-idf
+
+psram:
+  mode: octal
+  speed: 80000000
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "dHN0"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+time:
+  - platform: homeassistant
+
+esp32_ble_tracker:
+  scan_parameters:
+    interval: 100ms
+    window: 30ms
+    active: false
+    continuous: true
+
+#   on_ble_advertise:
+#       then:
+#         - lambda: |-
+#             ESP_LOGI("ble_adv", "New BLE device (address: %s): %s", x.address_str().c_str(), x.get_name().c_str());
+
+pinky_winky:
+  - id: bike_tracker
+    mac_address: "11:22:33:44:55:66"
+    secret: "so-secret-much-strong"
+
+binary_sensor:
+  - platform: pinky_winky
+    id: bike_button
+    input: bike_tracker
+    name: "Bike tracker button"
+
+sensor:
+  - platform: pinky_winky
+    input: bike_tracker
+    battery_level:
+      id: bike_battery
+      name: "Bike tracker battery level"
+
+button:
+  - platform: template
+    name: "[re]Bind bike tracker"
+    on_press:
+      - pinky_winky.reset:
+          id: bike_tracker
+
+switch:
+  - platform: restart
+    name: Restart
+
