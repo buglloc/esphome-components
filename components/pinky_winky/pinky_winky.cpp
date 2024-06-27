@@ -15,6 +15,7 @@ namespace {
 }
 
 void PinkyWinky::setup() {
+  this->lock_ = xSemaphoreCreateMutex();
   this->parser_.setup();
   this->pref_ = global_preferences->make_preference<float>(this->get_object_id_hash());
   if (!this->pref_.load(&this->ts_delta_)) {
@@ -36,9 +37,17 @@ void PinkyWinky::dump_config() {
 }
 
 void PinkyWinky::reset() {
-  this->ts_delta_ = 0;
-  this->pref_.save(&this->ts_delta_);
-  ESP_LOGI(TAG, "state was reseted");
+  if (xSemaphoreTake(this->lock_, portMAX_DELAY)) {
+    this->ts_delta_ = 0;
+    this->last_ts_ = 0;
+    this->pref_.save(&this->ts_delta_);
+    xSemaphoreGive(this->lock_);
+
+    ESP_LOGI(TAG, "state was reseted");
+    return;
+  }
+
+  ESP_LOGE(TAG, "unable to get lock");
 }
 
 bool PinkyWinky::parse_device(const esp32_ble_tracker::ESPBTDevice &device) {
@@ -47,6 +56,11 @@ bool PinkyWinky::parse_device(const esp32_ble_tracker::ESPBTDevice &device) {
     return false;
   }
 
+  if (!xSemaphoreTake(this->lock_, 0)) {
+    return false;
+  }
+
+  bool ok = false;
   for (auto &it : device.get_manufacturer_datas()) {
     if (!this->parser_.is_pinky_uuid(it.uuid)) {
       ESP_LOGW(TAG, "parse_device: invalid uuid: %s", it.uuid.to_string().c_str());
@@ -59,7 +73,6 @@ bool PinkyWinky::parse_device(const esp32_ble_tracker::ESPBTDevice &device) {
       break;
     }
 
-    ESP_LOGD(TAG, "parsed: %d %" PRIu32 " (ts)", state->pressed, state->ts);
     if (!this->update_ts(state->ts)) {
       break;
     }
@@ -80,10 +93,12 @@ bool PinkyWinky::parse_device(const esp32_ble_tracker::ESPBTDevice &device) {
     }
 #endif
 
-    return true;
+    ok = true;
+    break;
   }
 
-  return false;
+  xSemaphoreGive(this->lock_);
+  return ok;
 }
 
 bool PinkyWinky::update_ts(uint32_t ts) {
