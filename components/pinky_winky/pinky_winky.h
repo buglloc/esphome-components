@@ -50,6 +50,7 @@ public:
 protected:
   PinkyParser parser_;
   ESPPreferenceObject pref_;
+  SemaphoreHandle_t lock_;
   time::RealTimeClock *time_;
   uint32_t max_ts_drift_;
   int32_t ts_delta_;
