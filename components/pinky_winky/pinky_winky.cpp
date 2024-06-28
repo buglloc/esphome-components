@@ -24,6 +24,7 @@ void PinkyWinky::setup() {
   this->lock_ = xSemaphoreCreateMutex();
   this->parser_.setup();
   this->last_ts_ = 0;
+  this->last_battery_update_ = 0;
 }
 
 void PinkyWinky::dump_config() {
