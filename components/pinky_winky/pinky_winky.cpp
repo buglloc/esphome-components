@@ -15,13 +15,15 @@ namespace {
 }
 
 void PinkyWinky::setup() {
-  this->lock_ = xSemaphoreCreateMutex();
-  this->parser_.setup();
   this->pref_ = global_preferences->make_preference<float>(this->get_object_id_hash());
   if (!this->pref_.load(&this->ts_delta_)) {
     this->ts_delta_ = 0;
-    ESP_LOGCONFIG(TAG, "restored ts delta");
+    ESP_LOGI(TAG, "restored ts delta");
   }
+
+  this->lock_ = xSemaphoreCreateMutex();
+  this->parser_.setup();
+  this->last_ts_ = 0;
 }
 
 void PinkyWinky::dump_config() {
@@ -69,7 +71,6 @@ bool PinkyWinky::parse_device(const esp32_ble_tracker::ESPBTDevice &device) {
 
     optional<PinkyState> state = this->parser_.parse_state(it.data, this->last_ts_);
     if (!state.has_value()) {
-      ESP_LOGD(TAG, "skip");
       break;
     }
 
