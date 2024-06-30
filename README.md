@@ -51,3 +51,36 @@ display:
 
 See [full example](examples/axs15231/t-display-s3-long.yaml) in [examples](examples) folder.
 Post about: [ESPHome: T-Display S3 Long](https://ut.buglloc.com/iot/esphome/t-display-s3-long-esphome/)
+
+## [PinkyWinky](components/pinky_winky) integration
+
+[PinkyWinky](https://github.com/buglloc/pinky-winky/) (BLE beacon) integration.
+
+Requirements:
+  - ESP-IDF (requires `esp32_ble_tracker`)
+
+Minimal example:
+```yaml
+external_components:
+  - source: github://buglloc/esphome-components
+    components: [ pinky_winky ]
+
+time:
+  - platform: homeassistant
+
+esp32_ble_tracker:
+
+pinky_winky:
+  - id: my_pinky
+    mac_address: "11:22:33:44:55:66"
+    secret: "so-secret-much-strong"
+
+binary_sensor:
+  - platform: pinky_winky
+    id: my_pinky_button
+    input: my_pinky
+    name: "Pinky button"
+```
+
+See [full example](examples/pinky_winky/bike-xiao-esps3.yaml) for [Seeed Studio XIAO ESP32S3](https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/) in [examples](examples) folder.
+Post about: [Open Sesame: PinkyWinky](https://ut.buglloc.com/iot/esphome/open-sesame/)
