@@ -59,7 +59,7 @@ protected:
 
   // PinkyWinky often gets into a state where it spams loads of battery update
   // notifications. Here we will limit to no more than every 60m.
-  uint8_t last_battery_update_;
+  uint32_t last_battery_update_;
 
 #ifdef USE_BINARY_SENSOR
   binary_sensor::BinarySensor *button_{nullptr};
