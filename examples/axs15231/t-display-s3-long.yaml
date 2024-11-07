@@ -89,3 +89,8 @@ touchscreen:
             touch.x_raw,
             touch.y_raw
           );
+
+# disable geen pmu state led (very annoying w/o battery)
+sy6970:
+  i2c_id: i2c_bus
+  state_led_enable: false
