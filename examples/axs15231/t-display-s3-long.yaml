@@ -20,7 +20,7 @@ esp32:
 
 external_components:
   - source: github://buglloc/esphome-components
-    components: [axs15231]
+    components: [axs15231, sy6970]
 
 spi:
   id: display_qspi
@@ -34,7 +34,7 @@ spi:
 i2c:
   sda: 15
   scl: 10
-  id: touchscreen_bus
+  id: i2c_bus
 
 font:
   - file: "gfonts://Roboto"
@@ -74,7 +74,7 @@ touchscreen:
   - platform: axs15231
     id: main_touch
     display: main_display
-    i2c_id: touchscreen_bus
+    i2c_id: i2c_bus
     transform:
       swap_xy: true
     on_touch:
