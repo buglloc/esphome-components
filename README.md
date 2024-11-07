@@ -55,7 +55,7 @@ Post about: [ESPHome: T-Display S3 Long](https://ut.buglloc.com/iot/esphome/t-di
 
 ## [SY6970](components/sy6970) PMU (wip)
 
-Currently, it only performs one task - turning off the [annoying status LED](https://ut.buglloc.com/assets/videos/t-display-long-pmu-state.webp) on the [T-Display S3 Long](https://www.lilygo.cc/products/t-display-s3-long).
+Currently, it only performs one task - turning off the [annoying state LED](https://ut.buglloc.com/assets/videos/t-display-long-pmu-state.webp) on the [T-Display S3 Long](https://www.lilygo.cc/products/t-display-s3-long).
 
 Minimal example:
 ```yaml
