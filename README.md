@@ -53,10 +53,9 @@ See the [full example](examples/axs15231/t-display-s3-long.yaml) in the [example
 
 Post about: [ESPHome: T-Display S3 Long](https://ut.buglloc.com/iot/esphome/t-display-s3-long-esphome/)
 
-## [sy6970](components/sy6970) display (wip)
+## [SY6970](components/sy6970) PMU (wip)
 
-[SY6970](docs/datasheet/SY6970.pdf) PMU used (and tested) on [T-Display S3 Long](https://www.lilygo.cc/products/t-display-s3-long).
-Currently, it only performs one task - turning off the [annoying status LED](https://ut.buglloc.com/assets/videos/t-display-long-pmu-state.webp) on the T-Display3 Long. 
+Currently, it only performs one task - turning off the [annoying status LED](https://ut.buglloc.com/assets/videos/t-display-long-pmu-state.webp) on the [T-Display S3 Long](https://www.lilygo.cc/products/t-display-s3-long).
 
 Minimal example:
 ```yaml
