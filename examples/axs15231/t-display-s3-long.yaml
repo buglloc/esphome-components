@@ -24,6 +24,7 @@ external_components:
 
 spi:
   id: display_qspi
+  type: quad
   clk_pin: 17
   data_pins:
     - 13
