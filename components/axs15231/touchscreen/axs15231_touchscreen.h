@@ -13,6 +13,10 @@ class AXS15231Touchscreen : public touchscreen::Touchscreen, public i2c::I2CDevi
   void setup() override;
   void dump_config() override;
 
+  void set_interrupt_pin(InternalGPIOPin *pin) {
+    this->interrupt_pin_ = pin;
+  }
+
   void set_reset_pin(GPIOPin *pin) {
     this->reset_pin_ = pin;
   }
@@ -20,6 +24,7 @@ class AXS15231Touchscreen : public touchscreen::Touchscreen, public i2c::I2CDevi
  protected:
   void update_touches() override;
 
+  InternalGPIOPin *interrupt_pin_{};
   GPIOPin *reset_pin_{};
 };
 

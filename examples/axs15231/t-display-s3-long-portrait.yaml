@@ -23,7 +23,7 @@ external_components:
     components: [axs15231, sy6970]
 
 spi:
-  id: display_qspi
+  id: lily_spi
   type: quad
   clk_pin: 17
   data_pins:
@@ -35,56 +35,63 @@ spi:
 i2c:
   sda: 15
   scl: 10
-  id: i2c_bus
+  id: lily_i2c
 
 font:
   - file: "gfonts://Roboto"
     id: font_std
-    size: 40
-    glyphs: "!\"%()+=,-_.:°0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz/\\[]|&@#'"
-  - file: "gfonts://Roboto@700"
-    id: font_title
-    size: 40
+    size: 20
     glyphs: "!\"%()+=,-_.:°0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz/\\[]|&@#'"
 
 globals:
-  - id: bgcolor
+  - id: bg_color
+    type: Color
+    initial_value: "Color::random_color()"
+  - id: point_color
     type: Color
     initial_value: "Color::random_color()"
 
 display:
   - platform: axs15231
-    id: main_display
-    spi_id: display_qspi
+    id: lily_display
+    spi_id: lily_spi
     dimensions:
       height: 640
       width: 180
     cs_pin: 12
     reset_pin: 16
     backlight_pin: 1
-    transform:
-      swap_xy: false
-    rotation: 90
-    auto_clear_enabled: false
+    rotation: 0
     lambda: |-
-      it.fill(id(bgcolor));
-      it.print(it.get_width()/2, it.get_height()/2-20, id(font_title), TextAlign::CENTER, "ESPHome");
-      it.print(it.get_width()/2, it.get_height()/2+20, id(font_std), TextAlign::CENTER, "@UTBDK");
+      it.fill(id(bg_color));
+      it.print(20, 20, id(font_std), Color(255, 0, 0), TextAlign::LEFT, "@UTBDK");
+
+      auto touch = id(lily_touch)->get_touch();
+      if (touch.has_value()) 
+        it.filled_circle(
+          touch.value().x <= 20 ? 20 : touch.value().x,
+          touch.value().y <= 20 ? 20 : touch.value().y,
+          20,
+          id(point_color)
+        );
 
 touchscreen:
   - platform: axs15231
-    id: main_touch
-    display: main_display
-    i2c_id: i2c_bus
+    id: lily_touch
+    display: lily_display
+    i2c_id: lily_i2c
+    interrupt_pin: GPIO11
     transform:
-      swap_xy: true
+      mirror_x: false
+      mirror_y: false
+      swap_xy: false
     on_touch:
       - lambda: |-
           Color newColor;
-          do { newColor =  Color::random_color(); } while (newColor == id(bgcolor));
-          id(bgcolor) = newColor;
+          do { newColor =  Color::random_color(); } while (newColor == id(point_color) || newColor == id(bg_color));
+          id(point_color) = newColor;
 
-          ESP_LOGI("cal", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
+          ESP_LOGI("touch", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
             touch.x,
             touch.y,
             touch.x_raw,
@@ -93,5 +100,5 @@ touchscreen:
 
 # disable geen pmu state led (very annoying w/o battery)
 sy6970:
-  i2c_id: i2c_bus
+  i2c_id: lily_i2c
   state_led_enable: false
