@@ -49,7 +49,7 @@ display:
       it.fill(Color::random_color());
 ```
 
-See the [full example](examples/axs15231/t-display-s3-long.yaml) in the [examples](examples) folder.
+See the [full example](examples/axs15231/t-display-s3-long-landscape.yaml) in the [examples](examples) folder.
 
 Post about: [ESPHome: T-Display S3 Long](https://ut.buglloc.com/iot/esphome/t-display-s3-long-esphome/)
 

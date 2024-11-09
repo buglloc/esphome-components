@@ -19,10 +19,12 @@ namespace {
       uint8_t len;
   } lcd_cmd_t;
 
-  const static lcd_cmd_t AXS_QSPI_INIT_NEW[] = {
+  const static lcd_cmd_t AXS_QSPI_INIT[] = {
     {AXS_LCD_DISPOFF, {0x00}, 0x40},
     {AXS_LCD_SLPIN,   {0x00}, 0x80},
     {AXS_LCD_SLPOUT,  {0x00}, 0x80},
+    {AXS_LCD_INVOFF,  {0x00}, 0x00},
+    {AXS_LCD_NORON,   {0x00}, 0x00},
     {AXS_LCD_DISPON,  {0x00}, 0x00},
   };
 
@@ -188,7 +190,6 @@ void AXS15231Display::setup_pins_() {
 }
 
 void AXS15231Display::set_madctl_() {
-// custom x/y transform and color order
   uint8_t mad = MADCTL_RGB;
   // TODO(buglloc): MADCTL_MV is broken
   // if (this->swap_xy_)
@@ -203,13 +204,13 @@ void AXS15231Display::set_madctl_() {
 }
 
 void AXS15231Display::init_lcd_() {
-  const lcd_cmd_t *lcd_init = AXS_QSPI_INIT_NEW;
-  for (int i = 0; i < sizeof(AXS_QSPI_INIT_NEW) / sizeof(lcd_cmd_t); ++i) {
+  const lcd_cmd_t *lcd_init = AXS_QSPI_INIT;
+  for (int i = 0; i < sizeof(AXS_QSPI_INIT) / sizeof(lcd_cmd_t); ++i) {
     this->write_command_(lcd_init[i].cmd, (uint8_t *)lcd_init[i].data, lcd_init[i].len & 0x3f);
     if (lcd_init[i].len & 0x80)
-        delay(150);
+      delay(150);
     if (lcd_init[i].len & 0x40)
-        delay(20);
+      delay(20);
   }
 }
 
@@ -325,6 +326,7 @@ void AXS15231Display::draw_absolute_pixel_internal(int x, int y, Color color) {
   }
 }
 
-#endif
 }  // namespace axs15231
 }  // namespace esphome
+
+#endif

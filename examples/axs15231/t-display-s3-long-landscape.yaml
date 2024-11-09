@@ -1,0 +1,104 @@
+esphome:
+  name: t-display-s3-long
+  friendly_name: LilyGo-T-Display-Long
+  platformio_options:
+    upload_speed: 921600
+    build_unflags: -Werror=all
+    board_build.flash_mode: dio
+    board_build.f_flash: 80000000L
+    board_build.f_cpu: 240000000L
+
+psram:
+  mode: octal
+  speed: 120MHz
+
+esp32:
+  board: esp32-s3-devkitc-1
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+
+external_components:
+  - source: github://buglloc/esphome-components
+    components: [axs15231, sy6970]
+
+spi:
+  id: lily_spi
+  type: quad
+  clk_pin: 17
+  data_pins:
+    - 13
+    - 18
+    - 21
+    - 14
+
+i2c:
+  sda: 15
+  scl: 10
+  id: lily_i2c
+
+font:
+  - file: "gfonts://Roboto"
+    id: font_std
+    size: 20
+    glyphs: "!\"%()+=,-_.:°0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz/\\[]|&@#'"
+
+globals:
+  - id: bg_color
+    type: Color
+    initial_value: "Color::random_color()"
+  - id: point_color
+    type: Color
+    initial_value: "Color::random_color()"
+
+display:
+  - platform: axs15231
+    id: lily_display
+    spi_id: lily_spi
+    dimensions:
+      height: 640
+      width: 180
+    cs_pin: 12
+    reset_pin: 16
+    backlight_pin: 1
+    rotation: 270
+    lambda: |-
+      it.fill(id(bg_color));
+      it.print(20, 20, id(font_std), Color(255, 0, 0), TextAlign::LEFT, "@UTBDK");
+
+      auto touch = id(lily_touch)->get_touch();
+      if (touch.has_value()) 
+        it.filled_circle(
+          touch.value().x <= 20 ? 20 : touch.value().x,
+          touch.value().y <= 20 ? 20 : touch.value().y,
+          20,
+          id(point_color)
+        );
+
+touchscreen:
+  - platform: axs15231
+    id: lily_touch
+    display: lily_display
+    i2c_id: lily_i2c
+    interrupt_pin: GPIO11
+    transform:
+      mirror_x: false
+      mirror_y: true
+      swap_xy: true
+    on_touch:
+      - lambda: |-
+          Color newColor;
+          do { newColor =  Color::random_color(); } while (newColor == id(point_color) || newColor == id(bg_color));
+          id(point_color) = newColor;
+
+          ESP_LOGI("touch", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
+            touch.x,
+            touch.y,
+            touch.x_raw,
+            touch.y_raw
+          );
+
+# disable geen pmu state led (very annoying w/o battery)
+sy6970:
+  i2c_id: lily_i2c
+  state_led_enable: false
