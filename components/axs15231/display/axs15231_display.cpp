@@ -14,9 +14,9 @@ namespace {
 
   typedef struct
   {
-      uint8_t cmd;
-      uint8_t data[36];
-      uint8_t len;
+    uint8_t cmd;
+    uint8_t data[36];
+    uint8_t len;
   } lcd_cmd_t;
 
   const static lcd_cmd_t AXS_QSPI_INIT[] = {
@@ -24,8 +24,6 @@ namespace {
     {AXS_LCD_SLPIN,   {0x00}, 0x80},
     {AXS_LCD_SLPOUT,  {0x00}, 0x80},
     {AXS_LCD_INVOFF,  {0x00}, 0x00},
-    {AXS_LCD_NORON,   {0x00}, 0x00},
-    {AXS_LCD_DISPON,  {0x00}, 0x00},
   };
 
   // store a 16 bit value in a buffer, big endian.
@@ -36,18 +34,52 @@ namespace {
 }  // anonymous namespace
 
 void AXS15231Display::update() {
-  if (this->prossing_update_) {
-    this->need_update_ = true;
+  if (!this->can_proceed()) {
     return;
   }
 
-  this->prossing_update_ = true;
-  do {
-    this->need_update_ = false;
-    this->do_update_();
-  } while (this->need_update_);
-  this->prossing_update_ = false;
-  this->display_();
+  this->do_update_();
+
+  if (this->x_low_ > this->x_high_ || this->y_low_ > this->y_high_) {
+    return;
+  }
+
+  // Start addresses and widths/heights must be divisible by 2 (CASET/RASET restriction in datasheet)
+  if (this->x_low_ % 2 == 1) {
+    this->x_low_--;
+  }
+  if (this->x_high_ % 2 == 0) {
+    this->x_high_++;
+  }
+  if (this->y_low_ % 2 == 1) {
+    this->y_low_--;
+  }
+  if (this->y_high_ % 2 == 0) {
+    this->y_high_++;
+  }
+
+  if (this->draw_from_origin_) {
+    this->x_low_ = 0;
+    this->y_low_ = 0;
+    this->x_high_ = this->width_ - 1;
+  }
+
+  int w = this->x_high_ - this->x_low_ + 1;
+  int h = this->y_high_ - this->y_low_ + 1;
+  this->write_to_display_(
+    // x_start y_start
+    this->x_low_, this->y_low_,
+    // w h
+    w, h,
+    // ptr
+    this->buffer_,
+    // x_offset y_offset
+    this->x_low_, this->y_low_,
+    // x_pad
+    this->width_ - w - this->x_low_
+  );
+
+  this->invalidate_();
 }
 
 float AXS15231Display::get_setup_priority() const {
@@ -57,24 +89,19 @@ float AXS15231Display::get_setup_priority() const {
 void AXS15231Display::setup() {
   ESP_LOGCONFIG(TAG, "setting up axs15231");
 
+  ESP_LOGI(TAG, "init internal buffer");
+  this->init_internal_(this->get_buffer_length_());
+  if (this->buffer_ == nullptr) {
+    this->mark_failed();
+    return;
+  }
+
   ESP_LOGI(TAG, "setup pins");
   this->setup_pins_();
   ESP_LOGI(TAG, "setup lcd");
   this->init_lcd_();
 
-  ESP_LOGI(TAG, "set madctl");
-  this->set_madctl_();
   this->invalidate_();
-
-  ESP_LOGI(TAG, "init internal buffer");
-  this->init_internal_(this->get_buffer_length_());
-  if (this->buffer_ == nullptr) {
-    this->mark_failed();
-  }
-
-  ESP_LOGI(TAG, "set brightness");
-  this->write_command_(AXS_LCD_WRDISBV, &this->brightness_, 1);
-
   this->setup_complete_ = true;
   ESP_LOGCONFIG(TAG, "axs15231 setup complete");
 }
@@ -90,12 +117,17 @@ void AXS15231Display::dump_config() {
   LOG_PIN("  CS Pin: ", this->cs_);
   LOG_PIN("  Reset Pin: ", this->reset_pin_);
   ESP_LOGCONFIG(TAG, "  SPI Data rate: %dMHz", (unsigned) (this->data_rate_ / 1000000));
+  LOG_UPDATE_INTERVAL(this);
 #ifdef USE_POWER_SUPPLY
   ESP_LOGCONFIG(TAG, "  Power Supply Configured: yes");
 #endif
 }
 
 void AXS15231Display::fill(Color color) {
+  if (!this->can_proceed()) {
+    return;
+  }
+
   uint16_t new_color = 0;
   this->x_low_ = 0;
   this->y_low_ = 0;
@@ -163,9 +195,11 @@ void AXS15231Display::set_swap_xy(bool swap_xy) {
 void AXS15231Display::set_brightness(uint8_t brightness) {
   this->brightness_ = brightness;
 
-  if (this->setup_complete_) {
-    this->write_command_(AXS_LCD_WRDISBV, &this->brightness_, 1);
+  if (!this->can_proceed()) {
+    return;
   }
+
+  this->write_command_(AXS_LCD_WRDISBV, &this->brightness_, 1);
 }
 
 void AXS15231Display::set_offsets(int16_t offset_x, int16_t offset_y) {
@@ -189,11 +223,11 @@ void AXS15231Display::setup_pins_() {
   this->reset_();
 }
 
-void AXS15231Display::set_madctl_() {
+void AXS15231Display::setup_madctl_() {
   uint8_t mad = MADCTL_RGB;
   // TODO(buglloc): MADCTL_MV is broken
-  // if (this->swap_xy_)
-  //   mad |= MADCTL_MV;
+  if (this->swap_xy_)
+    mad |= MADCTL_MV;
   if (this->mirror_x_)
     mad |= MADCTL_MX;
   if (this->mirror_y_)
@@ -212,6 +246,11 @@ void AXS15231Display::init_lcd_() {
     if (lcd_init[i].len & 0x40)
       delay(20);
   }
+
+  this->setup_madctl_();
+  this->write_command_(AXS_LCD_WRDISBV, &this->brightness_, 1);
+  this->write_command_(AXS_LCD_NORON);
+  this->write_command_(AXS_LCD_DISPON);
 }
 
 void AXS15231Display::reset_() {
@@ -239,45 +278,33 @@ void AXS15231Display::write_command_(uint8_t cmd) { this->write_command_(cmd, &c
 
 void AXS15231Display::set_addr_window_(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
   uint8_t buf[4];
-  x1 += this->offset_x_;
-  x2 += this->offset_x_;
-  y1 += this->offset_y_;
-  y2 += this->offset_y_;
-  put16_be(buf, x1);
-  put16_be(buf + 2, x2);
+
+  put16_be(buf, x1 + this->offset_x_);
+  put16_be(buf + 2, x2 + this->offset_x_);
   this->write_command_(AXS_LCD_CASET, buf, sizeof(buf));
-  put16_be(buf, y1);
-  put16_be(buf + 2, y2);
+
+  put16_be(buf, y1 + this->offset_y_);
+  put16_be(buf + 2, y2 + this->offset_y_);
   this->write_command_(AXS_LCD_RASET, buf, sizeof(buf));
 }
 
-void AXS15231Display::display_() {
-  if ((this->x_high_ < this->x_low_) || (this->y_high_ < this->y_low_)) {
-    return;
-  }
-
-  // we will only update the changed rows to the display
-  size_t const w = this->x_high_ - this->x_low_ + 1;
-  size_t const h = this->y_high_ - this->y_low_ + 1;
-  size_t const x_pad = this->get_width_internal() - w - this->x_low_;
-  this->set_addr_window_(this->x_low_, this->y_low_, this->x_high_, this->y_high_);
-
+void AXS15231Display::write_to_display_(int x_start, int y_start, int w, int h, const uint8_t *ptr, int x_offset, int y_offset, int x_pad) {
+  this->set_addr_window_(x_start, y_start, x_start + w - 1, y_start + h - 1);
   this->enable();
-
-  if (this->x_low_ == 0 && this->y_low_ == 0 && x_pad == 0) {
-    this->write_cmd_addr_data(8, 0x32, 24, 0x2C00, this->buffer_, w * h * 2, 4);
+  // x_ and y_offset are offsets into the source buffer, unrelated to our own offsets into the display.
+  if (x_offset == 0 && x_pad == 0 && y_offset == 0) {
+    // we could deal here with a non-zero y_offset, but if x_offset is zero, y_offset probably will be so don't bother
+    this->write_cmd_addr_data(8, 0x32, 24, 0x2C00, ptr, w * h * 2, 4);
   } else {
-    this->write_cmd_addr_data(8, 0x32, 24, 0x2C00, nullptr, 0, 4);
-    size_t stride = this->x_low_ + w + x_pad;
-    for (int y = 0; y != h; y++) {
-      size_t offset = ((y + this->y_low_) * stride + this->x_low_);
-      this->write_cmd_addr_data(0, 0, 0, 0, this->buffer_ + offset * 2, w * 2, 4);
+    auto stride = x_offset + w + x_pad;
+    uint16_t cmd = 0x2C00;
+    for (int y = 0; y != h; ++y) {
+      this->write_cmd_addr_data(8, 0x32, 24, cmd, ptr + ((y + y_offset) * stride + x_offset) * 2, w * 2, 4);
+      cmd = 0x3C00;
     }
   }
 
   this->disable();
-
-  this->invalidate_();
 }
 
 void AXS15231Display::invalidate_() {
@@ -289,9 +316,11 @@ void AXS15231Display::invalidate_() {
 }
 
 void AXS15231Display::draw_absolute_pixel_internal(int x, int y, Color color) {
+  if (!this->can_proceed()) {
+    return;
+  }
+
   if (x < 0 || x >= this->get_width_internal() || y < 0 || y >= this->get_height_internal()) {
-    ESP_LOGW(TAG, "tring to draw invalid pixel: x(0 <= %d < %d) && y(0 <= %d < %d)", x, this->get_width_internal(), y,
-               this->get_height_internal());
     return;
   }
 
@@ -324,6 +353,42 @@ void AXS15231Display::draw_absolute_pixel_internal(int x, int y, Color color) {
     if (y > this->y_high_)
       this->y_high_ = y;
   }
+}
+
+void AXS15231Display::draw_pixels_at(int x_start, int y_start, int w, int h, const uint8_t *ptr, display::ColorOrder order,
+                             display::ColorBitness bitness, bool big_endian, int x_offset, int y_offset, int x_pad) {
+  if (!this->can_proceed() || w <= 0 || h <= 0) {
+    return;
+  }
+
+  bool compatible = (
+    bitness == display::COLOR_BITNESS_565 &&
+    order == display::ColorOrder::COLOR_ORDER_RGB &&
+    big_endian == (this->bit_order_ == spi::BIT_ORDER_MSB_FIRST)
+  );
+
+  if (!compatible) {
+    return Display::draw_pixels_at(x_start, y_start, w, h, ptr, order, bitness, big_endian, x_offset, y_offset, x_pad);
+  }
+
+  if (this->draw_from_origin_) {
+    auto stride = x_offset + w + x_pad;
+    for (int y = 0; y != h; ++y) {
+      memcpy(
+        this->buffer_ + ((y + y_start) * this->width_ + x_start) * 2,
+        ptr + ((y + y_offset) * stride + x_offset) * 2, w * 2
+      );
+    }
+    ptr = this->buffer_;
+    w = this->width_;
+    h += y_start;
+    x_start = 0;
+    y_start = 0;
+    x_offset = 0;
+    y_offset = 0;
+  }
+
+  this->write_to_display_(x_start, y_start, w, h, ptr, x_offset, y_offset, x_pad);
 }
 
 }  // namespace axs15231

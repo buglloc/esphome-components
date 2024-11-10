@@ -22,6 +22,8 @@ external_components:
   - source: github://buglloc/esphome-components
     components: [axs15231, sy6970]
 
+logger:
+
 spi:
   id: lily_spi
   type: quad
@@ -62,6 +64,7 @@ display:
     reset_pin: 16
     backlight_pin: 1
     rotation: 270
+    auto_clear_enabled: false
     lambda: |-
       it.fill(id(bg_color));
       it.print(20, 20, id(font_std), Color(255, 0, 0), TextAlign::LEFT, "@UTBDK");
@@ -91,7 +94,7 @@ touchscreen:
           do { newColor =  Color::random_color(); } while (newColor == id(point_color) || newColor == id(bg_color));
           id(point_color) = newColor;
 
-          ESP_LOGI("touch", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
+          ESP_LOGI("touch", "x=%d, y=%d, x_raw=%d, y_raw=%d",
             touch.x,
             touch.y,
             touch.x_raw,

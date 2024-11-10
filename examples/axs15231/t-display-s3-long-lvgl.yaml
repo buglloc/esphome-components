@@ -1,0 +1,130 @@
+esphome:
+  name: t-display-s3-long
+  friendly_name: LilyGo-T-Display-Long
+  platformio_options:
+    upload_speed: 921600
+    build_unflags: -Werror=all
+    board_build.flash_mode: dio
+    board_build.f_flash: 80000000L
+    board_build.f_cpu: 240000000L
+
+psram:
+  mode: octal
+  speed: 120MHz
+
+esp32:
+  board: esp32-s3-devkitc-1
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+
+external_components:
+  - source: github://buglloc/esphome-components
+    components: [axs15231, sy6970]
+
+logger:
+
+spi:
+  id: lily_spi
+  type: quad
+  clk_pin: 17
+  data_pins:
+    - 13
+    - 18
+    - 21
+    - 14
+
+i2c:
+  sda: 15
+  scl: 10
+  id: lily_i2c
+
+display:
+  - platform: axs15231
+    id: lily_display
+    spi_id: lily_spi
+    dimensions:
+      height: 640
+      width: 180
+    cs_pin: 12
+    reset_pin: 16
+    backlight_pin: 1
+    update_interval: never
+    auto_clear_enabled: false
+    rotation: 270
+
+sy6970:
+  i2c_id: lily_i2c
+  state_led_enable: false
+
+sensor:
+  - platform: template
+    name: "random temp"
+    id: random_temp
+    unit_of_measurement: "°C"
+    lambda: |-
+      return rand() % 40;
+    update_interval: 200ms
+    on_value:
+      - lvgl.indicator.update:
+          id: temperature_needle
+          value: !lambda return x * 10;
+      - lvgl.label.update:
+          id: temperature_text
+          text:
+            format: "%.1f°C"
+            args: [ 'x' ]
+
+lvgl:
+  displays:
+    - lily_display
+
+  pages:
+    - id: meter_page
+      widgets:
+        - meter:
+            align: CENTER
+            height: 180
+            width: 180
+            scales:
+              - range_from: -100 # scale for the needle value
+                range_to: 400
+                angle_range: 240
+                rotation: 150
+                indicators:
+                  - line:
+                      id: temperature_needle
+                      width: 2
+                      color: 0xFF0000
+                      r_mod: -4
+                  - tick_style:
+                      start_value: -10
+                      end_value: 40
+                      color_start: 0x0000bd
+                      color_end: 0xbd0000
+                      width: 1
+              - range_from: -10 # scale for the value labels
+                range_to: 40
+                angle_range: 240
+                rotation: 150
+                ticks:
+                  width: 1
+                  count: 51
+                  length: 10
+                  color: 0x000000
+                  major:
+                    stride: 5
+                    width: 2
+                    length: 10
+                    color: 0x404040
+                    label_gap: 10
+            widgets:
+              - label:
+                  id: temperature_text
+                  text: "-.-°C"
+                  align: CENTER
+                  y: 45
+              - label:
+                  text: "Outdoor"
+                  align: CENTER
+                  y: 65
