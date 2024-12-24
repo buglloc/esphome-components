@@ -1,6 +1,6 @@
 # `ESPHome` components
 
-A collection of my ESPHome components. Tested on ESP Home v2024.2.1 and may be broken on older ones :)
+A collection of my ESPHome components. Tested on ESP Home v2024.12.2 and may be broken on older ones :)
 
 To use this repository you should confugure it inside your yaml-configuration:
 ```yaml

@@ -29,26 +29,26 @@ namespace {
     bool ok = false;
     mbedtls_sha1_context hashCtx;
     mbedtls_sha1_init(&hashCtx);
-    int err = mbedtls_sha1_starts_ret(&hashCtx);
+    int err = mbedtls_sha1_starts(&hashCtx);
     if (err) {
       ESP_LOGE(TAG, "check_pinky_sign: start sha1: %d", err);
       mbedtls_sha1_free(&hashCtx);
       goto cleanup;
     }
 
-    err = mbedtls_sha1_update_ret(&hashCtx, &mfg_data[0], IDX_MFG_SIGN);
+    err = mbedtls_sha1_update(&hashCtx, &mfg_data[0], IDX_MFG_SIGN);
     if (err) {
       ESP_LOGE(TAG, "check_pinky_sign: update hash: %d", err);
       goto cleanup;
     }
 
-    err = mbedtls_sha1_update_ret(&hashCtx, (const uint8_t*)password.c_str(), password.size());
+    err = mbedtls_sha1_update(&hashCtx, (const uint8_t*)password.c_str(), password.size());
     if (err) {
       ESP_LOGE(TAG, "check_pinky_sign: update hash: %d", err);
       goto cleanup;
     }
 
-    err = mbedtls_sha1_finish_ret(&hashCtx, hash);
+    err = mbedtls_sha1_finish(&hashCtx, hash);
     if (err) {
       ESP_LOGE(TAG, "check_pinky_sign: calculate hash (err %d)", err);
       goto cleanup;
