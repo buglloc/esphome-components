@@ -51,7 +51,7 @@ display:
 
 See the [full example](examples/axs15231/t-display-s3-long-landscape.yaml) in the [examples](examples) folder.
 
-Post about: [ESPHome: T-Display S3 Long](https://ut.buglloc.com/iot/esphome/t-display-s3-long-esphome/)
+Post about: [ESPHome: T-Display S3 Long](https://ut.buglloc.com/2024/03/t-display-s3-long-esphome/)
 
 ## [SY6970](components/sy6970) PMU (wip)
 
@@ -103,4 +103,4 @@ binary_sensor:
 
 See the [full example](examples/pinky_winky/bike-xiao-esps3.yaml) for usage with  [Seeed Studio XIAO ESP32S3](https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/) in the [examples](examples) folder.
 
-Post about: [Open Sesame: PinkyWinky](https://ut.buglloc.com/iot/esphome/open-sesame/)
+Post about: [Open Sesame: PinkyWinky](https://ut.buglloc.com/2024/06/open-sesame/)
