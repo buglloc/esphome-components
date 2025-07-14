@@ -73,7 +73,7 @@ CONFIG_SCHEMA = cv.All(
                 cs_pin_required=False,
                 default_mode="MODE0",
                 default_data_rate=20e6,
-                quad=True,
+                mode=spi.TYPE_QUAD,
             )
         )
     ),
