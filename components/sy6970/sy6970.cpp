@@ -29,6 +29,16 @@ void SY6970::setup() {
 
   this->disable_watchdog();
   this->is_state_led_enabled_ ? this->enable_state_led() : this->disable_state_led();
+  
+  
+  //Fix for phantom touch input when turning off backlight. https://github.com/Xinyuan-LilyGO/T-Display-S3-Long/issues/30
+  //Disable the ILIM pin and set the input current limit to maximum.
+  uint8_t ILIMPIN_byte = 0x3F;
+  this->write_register(0x00, &ILIMPIN_byte, 1); 
+  
+  //Turn off the BATFET without using the battery.
+  uint8_t BATFET_byte = 0x64;
+  this->write_register(0x09, &BATFET_byte, 1);
 
   ESP_LOGCONFIG(TAG, "SY6970 PMU setup complete");
 }
