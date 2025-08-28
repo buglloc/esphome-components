@@ -28,8 +28,19 @@ void SY6970::setup() {
   ESP_LOGCONFIG(TAG, "Setting up SY6970 PMU...");
 
   this->disable_watchdog();
-  this->is_state_led_enabled_ ? this->enable_state_led() : this->disable_state_led();
 
+  this->batfet_enabled_ ? this->enable_batfet() : this->disable_batfet();
+  this->ilim_pin_enable_ ? this->enable_ilim_pin() : this->disable_ilim_pin();
+
+  // LED config doesn't work when BATFET is disabled
+  if (this->batfet_enabled_) {
+    this->is_state_led_enabled_ ? this->enable_state_led() : this->disable_state_led();
+  } else if (this->is_state_led_enabled_) {
+    ESP_LOGW(TAG, "BATFET is disabled; overriding State LED to OFF");
+    this->is_state_led_enabled_ = false;
+  }
+
+  this->dump_config();
   ESP_LOGCONFIG(TAG, "SY6970 PMU setup complete");
 }
 
@@ -37,6 +48,8 @@ void SY6970::dump_config() {
   ESP_LOGCONFIG(TAG, "SY6970 PMU:");
   LOG_I2C_DEVICE(this);
   ESP_LOGCONFIG(TAG, "  State LED: %s", ONOFF(this->is_state_led_enabled_));
+  ESP_LOGCONFIG(TAG, "  ILIM Pin: %s", ONOFF(this->ilim_pin_enable_));
+  ESP_LOGCONFIG(TAG, "  BATFET: %s", ONOFF(this->batfet_enabled_));
 }
 
 void SY6970::reset_default() {
@@ -45,11 +58,33 @@ void SY6970::reset_default() {
 }
 
 void SY6970::enable_state_led() {
-  this->clear_register_bit(POWERS_PPM_REG_07H, 6);
+  i2c::ErrorCode err = this->clear_register_bit(POWERS_PPM_REG_07H, 6);
+  ERROR_CHECK(err);
 }
 
 void SY6970::disable_state_led() {
-  this->set_register_bit(POWERS_PPM_REG_07H, 6);
+  i2c::ErrorCode err = this->set_register_bit(POWERS_PPM_REG_07H, 6);
+  ERROR_CHECK(err);
+}
+
+void SY6970::enable_ilim_pin() {
+  i2c::ErrorCode err = this->set_register_bit(POWERS_PPM_REG_00H, 6);
+  ERROR_CHECK(err);
+}
+
+void SY6970::disable_ilim_pin() {
+  i2c::ErrorCode err = this->clear_register_bit(POWERS_PPM_REG_00H, 6);
+  ERROR_CHECK(err);
+}
+
+void SY6970::enable_batfet() {
+  i2c::ErrorCode err = this->clear_register_bit(POWERS_PPM_REG_09H, 5);
+  ERROR_CHECK(err);
+}
+
+void SY6970::disable_batfet() {
+  i2c::ErrorCode err = this->set_register_bit(POWERS_PPM_REG_09H, 5);
+  ERROR_CHECK(err);
 }
 
 void SY6970::disable_watchdog() {
