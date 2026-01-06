@@ -10,25 +10,40 @@ esphome:
           id: silica_days_left_sensor
           state: !lambda 'return id(silica_days_left);'
       - pcf8563.read_time
-      - pkt_p530.init
-      - pkt_p530.beep: 200
+      - pkt_p530.init:
+          on_error:
+          - script.execute: init_failed
+
+      - pkt_p530.beep:
+          continue_on_error: true
+          on_ms: 200
+          count: 1
+
+      - pkt_p530.door_open:
+          on_error:
+          - script.execute: init_failed
+
+      - pkt_p530.door_close:
+          on_error:
+          - script.execute: init_failed
+
       - pkt_p530.led_upper:
           on_ms: 65535
           count: 65535
-      - pkt_p530.door_close
 
 esp8266:
   board: esp01_1m
-
-external_components:                                                                                                                                                                      
-  - source: github://buglloc/esphome-components                                                                                                                                           
-    components: [pkt_p530]
-    refresh: 1h
 
 logger:
   level: DEBUG
   hardware_uart: UART1
   baud_rate: 0 # disable UART logger
+
+wifi:
+  id: wifi_
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
 
 uart:
   id: isd91230
@@ -44,15 +59,6 @@ i2c:
     scl: GPIO14
     sda: GPIO5
 
-time:
-  - platform: homeassistant
-    on_time_sync:
-      then:
-        pcf8563.write_time
-  - platform: pcf8563
-    id: pcf8563_time
-    address: 0x51
-
 pkt_p530:
   id: feeder
   uart_id: isd91230
@@ -62,6 +68,11 @@ globals:
     type: int
     restore_value: true
     initial_value: '30'
+
+  - id: silica_last_day
+    type: int
+    restore_value: true
+    initial_value: '0'
 
 sensor:
   - platform: pkt_p530
@@ -90,7 +101,9 @@ binary_sensor:
       - delayed_on_off: 500ms
     on_press: 
       then:
-        - script.execute: feed
+        - script.execute:
+            id: feed
+            portions: 5
 
   - platform: gpio
     pin: 
@@ -109,11 +122,11 @@ binary_sensor:
   - platform: pkt_p530
     id: feeder
     door_opened:
-      name: "Feeder door opened"
+      name: "Door opened"
     food_low:
-      name: "Feeder food low"
+      name: "Low food"
     door_issue:
-      name: "Feeder door issue"
+      name: "Door issue"
 
   - platform: template
     name: "Silica gel needs replacement"
@@ -124,6 +137,15 @@ binary_sensor:
 button:
   - platform: safe_mode
     id: safe_mode_button
+
+  - platform: template
+    name: "Feed cat!"
+    icon: mdi:food-drumstick
+    on_press: 
+      then:
+        - script.execute:
+            id: feed
+            portions: 5
 
   - platform: template
     name: "Replace silica gel"
@@ -137,29 +159,85 @@ button:
             id: silica_days_left_sensor
             state: 30
 
-interval:
-  - interval: 24h
-    then:
-      - lambda: |-
-          if (id(silica_days_left) > 0) {
-            id(silica_days_left)--;
-
-            id(silica_days_left_sensor)->publish_state(id(silica_days_left));
-          }
+time:
+  - platform: pcf8563
+    id: pcf8563_time
+    address: 0x51
+  - platform: homeassistant
+    id: ha_time
+    on_time_sync:
+      then:
+        pcf8563.write_time
+    on_time:
+      - cron: '00 00 00 * * *'
+        then:
+          - script.execute: update_silica_gel_sensor
+      - cron: '00 00 09 * * *'
+        then:
+          - script.execute:
+              id: feed
+              portions: 5
+      - cron: '00 00 21 * * *'
+        then:
+          - script.execute:
+              id: feed
+              portions: 5
 
 script:
-  - id: feed
-    mode: single
+  - id: update_silica_gel_sensor
+    mode: restart
     then:
       - logger.log:
-          format: "Feeding..."
+          format: "Update silica_days_left_sensor"
           level: INFO
+
+      - lambda: |-
+          auto now = id(ha_time).now();
+          if (!now.is_valid())
+            return;
+
+          int today = now.day_of_year;
+
+          if (id(silica_last_day) != today) {
+            id(silica_last_day) = today;
+
+            if (id(silica_days_left) > 0) {
+              id(silica_days_left)--;
+
+              id(silica_days_left_sensor)->publish_state(id(silica_days_left));
+            }
+          }
+
+  - id: init_failed
+    mode: restart
+    then:
+      - logger.log:
+          format: "Ooops, init failed!"
+          level: INFO
+
+      - pkt_p530.beep:
+          continue_on_error: true
+          on_ms: 200
+          off_ms: 200
+          count: 3
+
+      - pkt_p530.door_close:
+          continue_on_error: true
 
       - pkt_p530.led_lower:
           continue_on_error: true
           on_ms: 500
           off_ms: 500
           count: 65535
+
+  - id: feed
+    mode: single
+    parameters:
+      portions: int
+    then:
+      - logger.log:
+          format: "Feeding..."
+          level: INFO
 
       - if:
           condition:
@@ -174,7 +252,7 @@ script:
                   - script.execute: abort_feed
 
             - pkt_p530.dispense:
-                portions: 2  # make dynamic?
+                portions: !lambda return portions;
                 continue_on_error: true
 
             - pkt_p530.door_close:

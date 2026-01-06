@@ -56,7 +56,7 @@ template<typename... Ts> class BaseAction : public Action<Ts...>, public Parente
     this->num_running_++;
     this->stashed_args_ = std::make_tuple(x...);
 
-    ErrorCode err = this->do_action();
+    ErrorCode err = this->do_action(x...);
     if (err != ErrorCode::OK) {
       this->finish_(err);
       return;
@@ -75,7 +75,7 @@ template<typename... Ts> class BaseAction : public Action<Ts...>, public Parente
   }
 
  protected:
-  virtual ErrorCode do_action() { return ErrorCode::NOT_IMPLEMENTED; }
+  virtual ErrorCode do_action(const Ts &...x) { return ErrorCode::NOT_IMPLEMENTED; }
 
   void finish_(ErrorCode err) {
     if (err == ErrorCode::OK) {
@@ -215,7 +215,7 @@ template<LedCtlTarget target, typename... Ts> class LedCtlAction : public BaseAc
   void set_count(uint16_t v) { this->count_ = v; }
 
  protected:
-  ErrorCode do_action() override {
+  ErrorCode do_action(const Ts &...x) override {
     uint8_t payload[] = {
         static_cast<uint8_t>(target), uint8_t(this->on_ms_ >> 8), uint8_t(this->on_ms_), uint8_t(this->off_ms_ >> 8),
         uint8_t(this->off_ms_),       uint8_t(this->count_ >> 8), uint8_t(this->count_),
@@ -241,7 +241,7 @@ template<ReqType req, ReportType report, typename... Ts> class DoorCtlAction : p
   void set_duration(uint8_t v) { this->duration_ = v; }
 
  protected:
-  ErrorCode do_action() override {
+  ErrorCode do_action(const Ts &...x) override {
     return this->send_cmd_with_report(req, &this->duration_, 1, report, this->timeout_ms_);
   }
 
@@ -264,17 +264,19 @@ template<typename... Ts> using DoorCloseAction = DoorCtlAction<ReqType::CLOSE_DO
 
 template<typename... Ts> class DispenseAction : public BaseAction<Ts...> {
  public:
-  void set_portions(uint8_t v) { this->portions_ = v; }
-  void set_timeout(uint32_t ms) { this->timeout_ms_ = ms; }
+  TEMPLATABLE_VALUE(uint8_t, portions)
 
  protected:
-  ErrorCode do_action() override {
+  ErrorCode do_action(const Ts &...x) override {
     if (!this->parent_->has_food()) {
       return ErrorCode::NO_FOOD;
     }
 
-    uint8_t payload[] = {this->portions_, 0x01, 0x01, 0x50};
-    uint32_t timeout = this->timeout_ms_ > 0 ? this->timeout_ms_ : this->portions_ * 3000;
+    uint8_t portions = this->portions_.value(x...);
+    uint8_t payload[] = {portions, 0x01, 0x01, 0x50};
+
+    // 1 portion about 1.65s
+    uint32_t timeout = portions * 3000;
     return this->send_cmd_with_report(ReqType::DISPENSE, payload, sizeof(payload), ReportType::DISPENSE_DONE, timeout);
   }
 
@@ -284,17 +286,13 @@ template<typename... Ts> class DispenseAction : public BaseAction<Ts...> {
     }
     return ErrorCode::OK;
   }
-
- private:
-  uint8_t portions_{1};
-  uint32_t timeout_ms_{0};
 };
 
 // ============== Init Action ==============
 
 template<typename... Ts> class InitAction : public BaseAction<Ts...> {
  protected:
-  ErrorCode do_action() override {
+  ErrorCode do_action(const Ts &...x) override {
     static const uint8_t MOTOR_CONFIG[] = {0x05, 0x7E};
     static const uint8_t SET_PARAMS_A[] = {0x00, 0x05, 0x00, 0x05};
     static const uint8_t SET_PARAM_A[] = {0x00, 0x05};
@@ -318,12 +316,12 @@ template<typename... Ts> class InitAction : public BaseAction<Ts...> {
 
 template<typename... Ts> class IsReadyCondition : public Condition<Ts...>, public Parented<P530Component> {
  public:
-  bool check(Ts... x) override { return this->parent_->is_ready(); }
+  bool check(const Ts &...x) override { return this->parent_->is_ready(); }
 };
 
 template<typename... Ts> class HasFoodCondition : public Condition<Ts...>, public Parented<P530Component> {
  public:
-  bool check(Ts... x) override { return this->parent_->has_food(); }
+  bool check(const Ts &...x) override { return this->parent_->has_food(); }
 };
 
 }  // namespace pkt_p530

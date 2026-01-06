@@ -153,7 +153,9 @@ async def pkt_p530_open_door_to_code(config, action_id, template_arg, args):
 DISPENSE_ACTION_SCHEMA = cv.maybe_simple_value(
     BASE_ACTION_SCHEMA.extend(
         {
-            cv.Optional(CONF_PORTIONS, default=0x01): cv.int_range(min=0, max=255),
+            cv.Optional(CONF_PORTIONS, default=0x01): cv.templatable(
+                cv.int_range(min=0, max=255)
+            ),
         }
     ),
     key=CONF_PORTIONS,
@@ -164,7 +166,8 @@ DISPENSE_ACTION_SCHEMA = cv.maybe_simple_value(
 async def pkt_p530_dispense_to_code(config, action_id, template_arg, args):
     var = await base_action_code(config, action_id, template_arg, args)
 
-    cg.add(var.set_portions(config[CONF_PORTIONS]))
+    template_ = await cg.templatable(config[CONF_PORTIONS], args, cg.uint8)
+    cg.add(var.set_portions(template_))
     return var
 
 
