@@ -23,26 +23,6 @@ logger:
   hardware_uart: UART1
   baud_rate: 0 # disable UART logger
 
-# Enable Home Assistant API
-api:
-  encryption:
-    key: "DRGRFvux1ATzo1eLIGQbxvgPdTN5PHvoPqVdqc61pgg="
-
-ota:
-  - platform: esphome
-    password: "c7f3b0c9a633fca6c24314297813bcf8"
-
-wifi:
-  id: wifi_
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
-  fast_connect: true
-  manual_ip:
-    static_ip: 10.11.2.2
-    gateway: 10.11.1.1
-    subnet: 255.255.0.0
-    dns1: 10.11.1.1
-
 uart:
   id: isd91230
   tx_pin: GPIO1
