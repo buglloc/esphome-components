@@ -1,0 +1,169 @@
+esphome:
+  name: petkitp530
+  friendly_name: PetkitP530
+  platformio_options:
+    board_upload.flash_size: 2MB
+    board_upload.maximum_size: 2097152
+  on_boot:
+    then:
+      - pcf8563.read_time
+      - pkt_p530.init
+      - pkt_p530.beep: 200
+      - pkt_p530.led_upper:
+          on_ms: 65535
+          count: 65535
+      - pkt_p530.door_close
+
+esp8266:
+  board: esp01_1m
+
+# Enable logging
+logger:
+  level: DEBUG
+  hardware_uart: UART1
+  baud_rate: 0 # disable UART logger
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "DRGRFvux1ATzo1eLIGQbxvgPdTN5PHvoPqVdqc61pgg="
+
+ota:
+  - platform: esphome
+    password: "c7f3b0c9a633fca6c24314297813bcf8"
+
+wifi:
+  id: wifi_
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  manual_ip:
+    static_ip: 10.11.2.2
+    gateway: 10.11.1.1
+    subnet: 255.255.0.0
+    dns1: 10.11.1.1
+
+uart:
+  id: isd91230
+  tx_pin: GPIO1
+  rx_pin: GPIO3
+  baud_rate: 115200
+  debug:
+    sequence:
+      lambda: UARTDebug::log_hex(direction, bytes, ' ');
+
+i2c:
+  - id: pcf8563_i2c
+    scl: GPIO14
+    sda: GPIO5
+
+time:
+  - platform: sntp
+    on_time_sync:
+      then:
+        pcf8563.write_time
+  - platform: pcf8563
+    id: pcf8563_time
+    address: 0x51
+
+binary_sensor:
+  - platform: gpio
+    pin: 
+      number: GPIO13
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    name: "Manual feed"
+    filters:
+      - delayed_on_off: 500ms
+    on_press: 
+      then:
+        - script.execute: feed
+  - platform: gpio
+    pin: 
+      number: GPIO0
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    name: "Safe Mode Button"
+    on_multi_click:
+      - timing:
+          - ON for at least 5s
+        then:
+          - button.press: safe_mode_button
+
+pkt_p530:
+  id: feeder
+  uart_id: isd91230
+
+button:
+  - platform: safe_mode
+    id: safe_mode_button
+
+script:
+  - id: feed
+    mode: single
+    then:
+      - logger.log:
+          format: "Feeding..."
+          level: INFO
+      - pkt_p530.led_lower:
+          continue_on_error: true
+          on_ms: 500
+          off_ms: 500
+          count: 65535
+      - if:
+          condition:
+            pkt_p530.has_food
+          then:
+            - pkt_p530.door_open:
+                on_error:
+                  - logger.log:
+                      format: "Can't open door: abort feeding"
+                      level: ERROR
+                  - script.execute: abort_feed
+            - pkt_p530.dispense:
+                portions: 2  # make dynamic?
+                continue_on_error: true
+            - pkt_p530.door_close:
+                on_error:
+                  - logger.log:
+                      format: "Door close door: abort feeding"
+                      level: ERROR
+                  - script.execute: abort_feed
+            - pkt_p530.led_lower:
+                on_ms: 0
+                off_ms: 65535
+                count: 65535
+            - logger.log:
+                format: "Feeding complete, meow"
+                level: INFO
+          else:
+            - logger.log:
+                format: "NO FOOD!"
+                level: ERROR
+            - pkt_p530.beep:
+                continue_on_error: true
+                on_ms: 200
+                off_ms: 200
+                count: 10
+  - id: abort_feed
+    mode: restart
+    then:
+      - logger.log:
+          format: "Abort feeding..."
+          level: INFO
+      - pkt_p530.beep:
+          continue_on_error: true
+          on_ms: 200
+          off_ms: 200
+          count: 3
+      - pkt_p530.door_close:
+          continue_on_error: true
+      - pkt_p530.led_lower:
+          on_ms: 0
+          off_ms: 65535
+          count: 65535
+
