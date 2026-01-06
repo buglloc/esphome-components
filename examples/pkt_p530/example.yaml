@@ -144,8 +144,7 @@ interval:
           if (id(silica_days_left) > 0) {
             id(silica_days_left)--;
 
-            id(silica_days_left_sensor)
-              .publish_state(id(silica_days_left));
+            id(silica_days_left_sensor)->publish_state(id(silica_days_left));
           }
 
 script:

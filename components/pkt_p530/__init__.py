@@ -136,7 +136,6 @@ DOOR_ACTION_SCHEMA = BASE_ACTION_SCHEMA.extend(
     {
         cv.Optional(CONF_DURATION, default=0x1E): cv.int_range(min=0, max=255),
         cv.Optional(CONF_TIMEOUT, default="10s"): cv.positive_time_period_milliseconds,
-        cv.Optional(CONF_ON_DOOR_BLOCKED): automation.validate_action_list,
     }
 )
 
@@ -148,7 +147,6 @@ async def pkt_p530_open_door_to_code(config, action_id, template_arg, args):
 
     cg.add(var.set_duration(config[CONF_DURATION]))
     cg.add(var.set_timeout(config[CONF_TIMEOUT]))
-    # cg.add(var.set_on_door_blocked(config[CONF_ON_DOOR_BLOCKED]))
     return var
 
 

@@ -196,7 +196,7 @@ void P530Component::handle_door_complete_(const std::basic_string_view<uint8_t> 
 
   bool ok = payload[0] == 0x02;
   if (this->door_issue_sensor_) {
-    this->door_issue_sensor_->publish_state(ok);
+    this->door_issue_sensor_->publish_state(!ok);
   }
 
   if (payload[0] == 0x02) {
