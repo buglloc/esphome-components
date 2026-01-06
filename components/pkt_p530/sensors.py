@@ -65,10 +65,10 @@ async def to_code(config):
         sens = await binary_sensor.new_binary_sensor(cfg)
         cg.add(var.set_door_issue_sensor(sens))
 
-    if cfg := config.get[CONF_LAST_FEED]:
+    if cfg := config.get(CONF_LAST_FEED):
         sens = await sensor.new_sensor(cfg)
         cg.add(var.last_feed_portions_sensor.set(sens))
 
-    if cfg := config.get[CONF_TOTAL]:
+    if cfg := config.get(CONF_TOTAL):
         sens = await sensor.new_sensor(cfg)
         cg.add(var.total_portions_sensor.set(sens))
