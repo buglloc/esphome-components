@@ -11,8 +11,6 @@
 namespace esphome {
 namespace pkt_p530 {
 
-static const char *const TAG = "pkt_p530::actions";
-
 // ============== Base Action ==============
 
 template<typename... Ts> class PktAction : public Action<Ts...>, public Parented<P530Component> {
@@ -165,7 +163,6 @@ template<typename... Ts> class PktAction : public Action<Ts...>, public Parented
       handled = maybe_play(this->on_error_);
     }
 
-    // this->num_running_--;
     if (!handled) {
       this->trigger_next_();
     }
@@ -185,7 +182,6 @@ template<typename... Ts> class PktAction : public Action<Ts...>, public Parented
   }
 
  protected:
-  bool finished_{false};
   Stage stage_{Stage::IDLE};
 
   uint8_t expected_report_type_{0};
@@ -218,9 +214,9 @@ template<LedCtlTarget target, typename... Ts> class LedCtlAction : public PktAct
   }
 
  private:
-  uint16_t on_ms_{100};
-  uint16_t off_ms_{100};
-  uint16_t count_{1};
+  uint16_t on_ms_{0};
+  uint16_t off_ms_{0};
+  uint16_t count_{65535};
 };
 
 template<typename... Ts> using LedUpperAction = LedCtlAction<LedCtlTarget::UPPER_LED, Ts...>;
@@ -275,7 +271,6 @@ template<typename... Ts> class DispenseAction : public PktAction<Ts...> {
   }
 
   ErrorCode handle_report_(const std::span<const uint8_t> payload) override {
-    ESP_LOGW(TAG, "Dispense report! ok=%d", payload.size() < 3 || payload[2] == 0x00);
     if (payload.size() < 3 || payload[2] == 0x00) {
       return ErrorCode::NOT_IMPLEMENTED;  // not done yet
     }

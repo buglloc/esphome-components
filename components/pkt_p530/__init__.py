@@ -87,7 +87,6 @@ async def base_action_code(
 
     cg.add(var.set_send_timeout(config[CONF_SEND_TIMEOUT]))
     cg.add(var.set_wait_for_complete(config[CONF_WAIT_FOR_COMPLETE]))
-    # cg.add(var.set_continue_on_error(CONF_ON_ERROR in config))
 
     if on_complete_config := config.get(CONF_ON_COMPLETE):
         actions = await automation.build_action_list(

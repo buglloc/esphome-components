@@ -121,10 +121,12 @@ binary_sensor:
     id: feeder
     door_opened:
       name: "Door opened"
-    food_low:
-      name: "Low food"
-    door_issue:
-      name: "Door issue"
+    food_low_issue:
+      name: "Low food issue"
+    door_open_issue:
+      name: "Door issue (open)"
+    door_close_issue:
+      name: "Door issue (close)"
 
   - platform: template
     name: "Silica gel needs replacement"
@@ -169,7 +171,27 @@ time:
     on_time:
       - cron: '00 00 00 * * *'
         then:
-          - script.execute: update_silica_gel_sensor
+          - lambda: |-
+              auto now = id(ha_time).now();
+              if (!now.is_valid())
+                return;
+
+              int today = now.day_of_year;
+
+              if (id(silica_last_day) != today) {
+                id(silica_last_day) = today;
+
+                if (id(silica_days_left) > 0) {
+                  id(silica_days_left)--;
+
+                  id(silica_days_left_sensor)->publish_state(id(silica_days_left));
+                }
+              }
+
+          - lambda: |-
+              id(daily_portions) = 0;
+              id(daily_portions_sensor).publish_state(0);
+
       - cron: '00 00 09 * * *'
         then:
           - script.execute:
@@ -196,8 +218,6 @@ script:
           preset: "short"
           count: 1
       - pkt_p530.door_open:
-          on_error:
-          - script.execute: boot_failed
       - delay: 2s
       - pkt_p530.door_close:
           on_error:

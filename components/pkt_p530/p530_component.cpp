@@ -14,8 +14,9 @@ void P530Component::dump_config() {
   ESP_LOGCONFIG(TAG, "Petkit P530:");
   this->check_uart_settings(115200, 1, uart::UART_CONFIG_PARITY_NONE, 8);
   LOG_BINARY_SENSOR("  ", "Door Opened Sensor", this->door_opened_sensor_);
-  LOG_BINARY_SENSOR("  ", "Door Issue Sensor", this->door_issue_sensor_);
-  LOG_BINARY_SENSOR("  ", "Low Food Sensor", this->food_low_sensor_);
+  LOG_BINARY_SENSOR("  ", "Door Open Issue Sensor", this->door_open_issue_sensor_);
+  LOG_BINARY_SENSOR("  ", "Door Close Issue Sensor", this->door_close_issue_sensor_);
+  LOG_BINARY_SENSOR("  ", "Low Food Issue Sensor", this->food_low_issue_sensor_);
   LOG_SENSOR("  ", "Dispensed Food Portions Sensor", this->dispensed_portions_sensor_);
 }
 
@@ -120,9 +121,11 @@ void P530Component::handle_packet_(uint8_t type, uint8_t seq, const std::span<co
       break;
 
     case ReportType::DOOR_OPEN_DONE:
-      [[fallthrough]];
+      this->handle_door_complete_(DoorDirection::OPEN, payload);
+      break;
+
     case ReportType::DOOR_CLOSE_DONE:
-      this->handle_door_complete_(payload);
+      this->handle_door_complete_(DoorDirection::CLOSE, payload);
       break;
 
     case ReportType::DISPENSE_DONE:
@@ -177,8 +180,8 @@ void P530Component::handle_status_(const std::span<const uint8_t> payload) {
   ESP_LOGD(TAG, "Got status report: food=%s, door_opened=%s", YESNO(this->last_status_.has_food()),
            YESNO(this->last_status_.is_door_open()));
 
-  if (this->food_low_sensor_) {
-    this->food_low_sensor_->publish_state(!this->last_status_.has_food());
+  if (this->food_low_issue_sensor_) {
+    this->food_low_issue_sensor_->publish_state(!this->last_status_.has_food());
   }
 
   if (this->door_opened_sensor_) {
@@ -186,19 +189,32 @@ void P530Component::handle_status_(const std::span<const uint8_t> payload) {
   }
 }
 
-void P530Component::handle_door_complete_(const std::span<const uint8_t> payload) {
+void P530Component::handle_door_complete_(DoorDirection dir, const std::span<const uint8_t> payload) {
   if (payload.size() < 1) {
     // ????
     ESP_LOGE(TAG, "unexpected door complete payload size: %zu", payload.size());
     return;
   }
 
-  bool ok = payload[0] == 0x02;
-  if (this->door_issue_sensor_) {
-    this->door_issue_sensor_->publish_state(!ok);
+  bool succesfull = payload[0] == 0x02;
+  switch (dir) {
+    case DoorDirection::OPEN:
+      if (this->door_open_issue_sensor_) {
+        this->door_open_issue_sensor_->publish_state(!succesfull);
+      }
+      break;
+
+    case DoorDirection::CLOSE:
+      if (this->door_close_issue_sensor_) {
+        this->door_close_issue_sensor_->publish_state(!succesfull);
+      }
+      break;
+
+    default:
+      break;
   }
 
-  if (payload[0] == 0x02) {
+  if (succesfull) {
     ESP_LOGI(TAG, "Got door report: opened/closed");
     return;
   }

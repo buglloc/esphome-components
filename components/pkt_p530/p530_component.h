@@ -26,6 +26,12 @@ enum class ErrorCode : uint8_t {
   NOT_IMPLEMENTED = 8,
 };
 
+enum class DoorDirection : uint8_t {
+  NONE = 0,
+  OPEN = 1,
+  CLOSE = 2,
+};
+
 using ReportCallback = std::function<bool(ErrorCode, const std::span<const uint8_t> payload)>;
 
 struct ReportWaiter {
@@ -48,9 +54,11 @@ class P530Component : public Component, public uart::UARTDevice {
 
   void set_door_opened_sensor(binary_sensor::BinarySensor *s) { this->door_opened_sensor_ = s; }
 
-  void set_door_issue_sensor(binary_sensor::BinarySensor *s) { this->door_issue_sensor_ = s; }
+  void set_door_open_issue_sensor(binary_sensor::BinarySensor *s) { this->door_open_issue_sensor_ = s; }
 
-  void set_food_low_sensor(binary_sensor::BinarySensor *s) { this->food_low_sensor_ = s; }
+  void set_door_close_issue_sensor(binary_sensor::BinarySensor *s) { this->door_close_issue_sensor_ = s; }
+
+  void set_food_low_issue_sensor(binary_sensor::BinarySensor *s) { this->food_low_issue_sensor_ = s; }
 
   void set_dispensed_portions_sensor(sensor::Sensor *s) { this->dispensed_portions_sensor_ = s; }
 
@@ -78,7 +86,7 @@ class P530Component : public Component, public uart::UARTDevice {
   bool read_packet_();
   void handle_packet_(uint8_t type, uint8_t seq, const std::span<const uint8_t> payload);
   void handle_status_(const std::span<const uint8_t> payload);
-  void handle_door_complete_(const std::span<const uint8_t> payload);
+  void handle_door_complete_(DoorDirection dir, const std::span<const uint8_t> payload);
   void handle_dispense_complete_(const std::span<const uint8_t> payload);
 
   // State
@@ -91,8 +99,9 @@ class P530Component : public Component, public uart::UARTDevice {
 
   // Sensors
   binary_sensor::BinarySensor *door_opened_sensor_{nullptr};
-  binary_sensor::BinarySensor *food_low_sensor_{nullptr};
-  binary_sensor::BinarySensor *door_issue_sensor_{nullptr};
+  binary_sensor::BinarySensor *food_low_issue_sensor_{nullptr};
+  binary_sensor::BinarySensor *door_close_issue_sensor_{nullptr};
+  binary_sensor::BinarySensor *door_open_issue_sensor_{nullptr};
   sensor::Sensor *dispensed_portions_sensor_{nullptr};
 
   // Callbacks
