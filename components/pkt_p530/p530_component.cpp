@@ -16,8 +16,7 @@ void P530Component::dump_config() {
   LOG_BINARY_SENSOR("  ", "Door Opened Sensor", this->door_opened_sensor_);
   LOG_BINARY_SENSOR("  ", "Door Issue Sensor", this->door_issue_sensor_);
   LOG_BINARY_SENSOR("  ", "Low Food Sensor", this->food_low_sensor_);
-  LOG_SENSOR("  ", "Last Food Portions Sensor", this->last_feed_portions_sensor_);
-  LOG_SENSOR("  ", "Total Food Portions Sensor", this->total_portions_sensor_);
+  LOG_SENSOR("  ", "Dispensed Food Portions Sensor", this->dispensed_portions_sensor_);
 }
 
 void P530Component::loop() {
@@ -214,23 +213,15 @@ void P530Component::handle_dispense_complete_(const std::basic_string_view<uint8
     return;
   }
 
-  if (payload[2] != 0x01) {
+  if (payload[2] == 0x00) {
     ESP_LOGI(TAG, "Got dispense complete report: in progress");
     return;
   }
 
   uint8_t portions = static_cast<uint8_t>(payload[0]);
   ESP_LOGI(TAG, "Got dispense complete report: portions=%d", portions);
-  if (this->last_feed_portions_sensor_ != nullptr) {
-    this->last_feed_portions_sensor_->publish_state(portions);
-  }
-
-  if (this->total_portions_sensor_ != nullptr) {
-    float current = this->total_portions_sensor_->state;
-    if (std::isnan(current))
-      current = 0;
-
-    this->total_portions_sensor_->publish_state(current + portions);
+  if (this->dispensed_portions_sensor_ != nullptr) {
+    this->dispensed_portions_sensor_->publish_state(portions);
   }
 }
 

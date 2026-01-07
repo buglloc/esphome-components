@@ -77,10 +77,8 @@ globals:
 sensor:
   - platform: pkt_p530
     id: feeder
-    last_feed_portions:
-      name: "Last feed portions"
-    total_portions:
-      name: "Total portions dispensed"
+    dispensed_portions:
+      name: "Feed dispensed portions"
 
   - platform: template
     id: silica_days_left_sensor

@@ -52,9 +52,7 @@ class P530Component : public Component, public uart::UARTDevice {
 
   void set_food_low_sensor(binary_sensor::BinarySensor *s) { this->food_low_sensor_ = s; }
 
-  void set_last_feed_portions_sensor(sensor::Sensor *s) { this->last_feed_portions_sensor_ = s; }
-
-  void set_total_portions_sensor(sensor::Sensor *s) { this->total_portions_sensor_ = s; }
+  void set_dispensed_portions_sensor(sensor::Sensor *s) { this->dispensed_portions_sensor_ = s; }
 
   void add_on_error_callback(std::function<void(ErrorCode)> callback) {
     this->error_callback_.add(std::move(callback));
@@ -95,8 +93,7 @@ class P530Component : public Component, public uart::UARTDevice {
   binary_sensor::BinarySensor *door_opened_sensor_{nullptr};
   binary_sensor::BinarySensor *food_low_sensor_{nullptr};
   binary_sensor::BinarySensor *door_issue_sensor_{nullptr};
-  sensor::Sensor *last_feed_portions_sensor_{nullptr};
-  sensor::Sensor *total_portions_sensor_{nullptr};
+  sensor::Sensor *dispensed_portions_sensor_{nullptr};
 
   // Callbacks
   CallbackManager<void(ErrorCode)> error_callback_;
