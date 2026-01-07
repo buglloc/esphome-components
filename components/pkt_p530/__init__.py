@@ -2,7 +2,14 @@ from esphome import automation, core
 import esphome.codegen as cg
 from esphome.components import uart
 import esphome.config_validation as cv
-from esphome.const import CONF_ID, CONF_ON_ERROR
+from esphome.const import (
+    CONF_COUNT,
+    CONF_DURATION,
+    CONF_ID,
+    CONF_ON_ERROR,
+    CONF_PRESET,
+    CONF_TIMEOUT,
+)
 from esphome.types import ConfigType
 
 CODEOWNERS = ["@buglloc"]
@@ -12,10 +19,7 @@ AUTO_LOAD = ["sensor", "binary_sensor"]
 
 CONF_ON_MS = "on_ms"
 CONF_OFF_MS = "off_ms"
-CONF_COUNT = "count"
-CONF_DURATION = "duration"
 CONF_PORTIONS = "portions"
-CONF_TIMEOUT = "timeout"
 CONF_SEND_TIMEOUT = "send_timeout"
 CONF_ON_DOOR_BLOCKED = "on_door_blocked"
 CONF_ON_DISPENSE_COMPLETE = "on_dispense_complete"
@@ -106,28 +110,107 @@ async def base_action_code(
 
 # ============== LED Control Actions ==============
 
+LED_PRESETS = {
+    "custom": {
+        CONF_ON_MS: 0,
+        CONF_OFF_MS: 0,
+        CONF_COUNT: 0,
+    },
+    "steady_on": {
+        CONF_ON_MS: 65535,
+        CONF_OFF_MS: 0,
+        CONF_COUNT: 65535,
+    },
+    "steady_off": {
+        CONF_ON_MS: 0,
+        CONF_OFF_MS: 65535,
+        CONF_COUNT: 65535,
+    },
+    "blink": {
+        CONF_ON_MS: 1000,
+        CONF_OFF_MS: 1000,
+        CONF_COUNT: 65535,
+    },
+    "blink_fast": {
+        CONF_ON_MS: 500,
+        CONF_OFF_MS: 500,
+        CONF_COUNT: 65535,
+    },
+}
+
+BEEP_PRESETS = {
+    "custom": {
+        CONF_ON_MS: 0,
+        CONF_OFF_MS: 0,
+        CONF_COUNT: 0,
+    },
+    "single": {
+        CONF_ON_MS: 200,
+        CONF_OFF_MS: 0,
+        CONF_COUNT: 1,
+    },
+    "short": {
+        CONF_ON_MS: 200,
+        CONF_OFF_MS: 200,
+        CONF_COUNT: 3,
+    },
+    "long": {
+        CONF_ON_MS: 500,
+        CONF_OFF_MS: 500,
+        CONF_COUNT: 10,
+    },
+}
+
+BASE_LED_CTL_SCHEMA = BASE_ACTION_SCHEMA.extend(
+    {
+        cv.Optional(CONF_ON_MS): cv.int_range(min=0, max=65535),
+        cv.Optional(CONF_OFF_MS): cv.int_range(min=0, max=65535),
+        cv.Optional(CONF_COUNT): cv.int_range(min=0, max=65535),
+    }
+)
+
 LED_CTL_SCHEMA = cv.maybe_simple_value(
-    BASE_ACTION_SCHEMA.extend(
+    BASE_LED_CTL_SCHEMA.extend(
         {
-            cv.Optional(CONF_ON_MS, default=0): cv.int_range(min=0, max=65535),
-            cv.Optional(CONF_OFF_MS, default=0): cv.int_range(min=0, max=65535),
-            cv.Optional(CONF_COUNT, default=1): cv.int_range(min=0, max=65535),
+            cv.Optional(CONF_PRESET, default="custom"): cv.enum(LED_PRESETS),
         }
     ),
-    key=CONF_ON_MS,
+    key=CONF_PRESET,
 )
+
+BEEP_CTL_SCHEMA = cv.maybe_simple_value(
+    BASE_LED_CTL_SCHEMA.extend(
+        {
+            cv.Optional(CONF_PRESET, default="custom"): cv.enum(BEEP_PRESETS),
+        }
+    ),
+    key=CONF_PRESET,
+)
+
+
+async def led_preset_to_code(config, var, source):
+    preset = dict(source[config[CONF_PRESET]])
+    for conf_name in [CONF_ON_MS, CONF_OFF_MS, CONF_COUNT]:
+        if conf_name in config:
+            preset[conf_name] = config[conf_name]
+
+    cg.add(var.set_on_ms(preset[CONF_ON_MS]))
+    cg.add(var.set_off_ms(preset[CONF_OFF_MS]))
+    cg.add(var.set_count(preset[CONF_COUNT]))
+    return var
 
 
 @automation.register_action("pkt_p530.led_upper", LedUpperAction, LED_CTL_SCHEMA)
 @automation.register_action("pkt_p530.led_lower", LedLowerAction, LED_CTL_SCHEMA)
-@automation.register_action("pkt_p530.beep", BeepAction, LED_CTL_SCHEMA)
 async def pkt_p530_led_ctl_to_code(config, action_id, template_arg, args):
     var = await base_action_code(config, action_id, template_arg, args)
+    return await led_preset_to_code(config, var, LED_PRESETS)
 
-    cg.add(var.set_on_ms(config[CONF_ON_MS]))
-    cg.add(var.set_off_ms(config[CONF_OFF_MS]))
-    cg.add(var.set_count(config[CONF_COUNT]))
-    return var
+
+@automation.register_action("pkt_p530.beep", BeepAction, BEEP_CTL_SCHEMA)
+async def pkt_p530_beep_ctl_to_code(config, action_id, template_arg, args):
+    var = await base_action_code(config, action_id, template_arg, args)
+    return await led_preset_to_code(config, var, BEEP_PRESETS)
 
 
 # ================ Feed actions ==============
