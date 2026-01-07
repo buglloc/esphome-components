@@ -22,6 +22,7 @@ enum class LedCtlTarget : uint8_t {
 
 // Command types (ESP8266 -> ISD91230)
 enum class ReqType : uint8_t {
+  NONE = 0x00,
   GET_STATUS = 0x01,
   SET_PARAMS_A = 0x03,
   SET_PARAMS_B = 0x04,
@@ -37,6 +38,7 @@ enum class ReqType : uint8_t {
 
 // Response types (ISD91230 -> ESP8266)
 enum class ReportType : uint8_t {
+  NONE = 0x00,
   STATUS = 0x02,
   DOOR_OPEN_DONE = 0x08,
   DOOR_CLOSE_DONE = 0x0A,

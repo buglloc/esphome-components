@@ -102,7 +102,7 @@ bool P530Component::read_packet_() {
     uint8_t type = this->rx_buffer_[3];
     uint8_t seq = this->rx_buffer_[4];
     uint8_t payload_len = len - PACKET_HEADER_SIZE - PACKET_CRC_SIZE;
-    std::basic_string_view<uint8_t> payload(&this->rx_buffer_[PACKET_HEADER_SIZE], payload_len);
+    std::span<const uint8_t> payload{this->rx_buffer_ + PACKET_HEADER_SIZE, payload_len};
 
     ESP_LOGD(TAG, "RX: type=0x%02X seq=0x%02X len=%u", type, seq, payload_len);
     this->handle_packet_(type, seq, payload);
@@ -112,7 +112,7 @@ bool P530Component::read_packet_() {
   return false;
 }
 
-void P530Component::handle_packet_(uint8_t type, uint8_t seq, const std::basic_string_view<uint8_t> payload) {
+void P530Component::handle_packet_(uint8_t type, uint8_t seq, const std::span<const uint8_t> payload) {
   // Check interesting reports
   switch (static_cast<ReportType>(type)) {
     case ReportType::STATUS:
@@ -166,7 +166,7 @@ void P530Component::handle_packet_(uint8_t type, uint8_t seq, const std::basic_s
   }
 }
 
-void P530Component::handle_status_(const std::basic_string_view<uint8_t> payload) {
+void P530Component::handle_status_(const std::span<const uint8_t> payload) {
   if (payload.size() < sizeof(StatusReport)) {
     ESP_LOGE(TAG, "unexpected status report payload size: %zu", payload.size());
     return;
@@ -186,7 +186,7 @@ void P530Component::handle_status_(const std::basic_string_view<uint8_t> payload
   }
 }
 
-void P530Component::handle_door_complete_(const std::basic_string_view<uint8_t> payload) {
+void P530Component::handle_door_complete_(const std::span<const uint8_t> payload) {
   if (payload.size() < 1) {
     // ????
     ESP_LOGE(TAG, "unexpected door complete payload size: %zu", payload.size());
@@ -206,7 +206,7 @@ void P530Component::handle_door_complete_(const std::basic_string_view<uint8_t> 
   ESP_LOGW(TAG, "Got door report: door blocked, status=0x%02X", payload[0]);
 }
 
-void P530Component::handle_dispense_complete_(const std::basic_string_view<uint8_t> payload) {
+void P530Component::handle_dispense_complete_(const std::span<const uint8_t> payload) {
   if (payload.size() < 3) {
     // ????
     ESP_LOGE(TAG, "unexpected dispense complete payload size: %zu", payload.size());

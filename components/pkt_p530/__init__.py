@@ -21,11 +21,8 @@ CONF_ON_MS = "on_ms"
 CONF_OFF_MS = "off_ms"
 CONF_PORTIONS = "portions"
 CONF_SEND_TIMEOUT = "send_timeout"
-CONF_ON_DOOR_BLOCKED = "on_door_blocked"
-CONF_ON_DISPENSE_COMPLETE = "on_dispense_complete"
 
 CONF_ON_COMPLETE = "on_complete"
-CONF_CONTINUE_ON_ERROR = "continue_on_error"
 CONF_WAIT_FOR_COMPLETE = "wait_for_complete"
 
 pkt_p530_ns = cg.esphome_ns.namespace("pkt_p530")
@@ -75,7 +72,6 @@ BASE_ACTION_SCHEMA = cv.Schema(
         cv.Optional(CONF_ON_COMPLETE): automation.validate_action_list,
         cv.Optional(CONF_ON_ERROR): automation.validate_action_list,
         cv.Optional(CONF_WAIT_FOR_COMPLETE, default=True): cv.boolean,
-        cv.Optional(CONF_CONTINUE_ON_ERROR, default=False): cv.boolean,
     }
 )
 
@@ -91,7 +87,7 @@ async def base_action_code(
 
     cg.add(var.set_send_timeout(config[CONF_SEND_TIMEOUT]))
     cg.add(var.set_wait_for_complete(config[CONF_WAIT_FOR_COMPLETE]))
-    cg.add(var.set_continue_on_error(config[CONF_CONTINUE_ON_ERROR]))
+    # cg.add(var.set_continue_on_error(CONF_ON_ERROR in config))
 
     if on_complete_config := config.get(CONF_ON_COMPLETE):
         actions = await automation.build_action_list(

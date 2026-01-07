@@ -181,7 +181,6 @@ time:
               id: feed
               portions: 5
 
-
 script:
   - id: bootup
     mode: single
@@ -189,28 +188,20 @@ script:
       - sensor.template.publish:
           id: silica_days_left_sensor
           state: !lambda 'return id(silica_days_left);'
-
       - pcf8563.read_time
-
       - pkt_p530.init:
           on_error:
           - script.execute: boot_failed
-
       - pkt_p530.beep:
-          continue_on_error: true
           preset: "short"
           count: 1
-
       - pkt_p530.door_open:
           on_error:
           - script.execute: boot_failed
-
       - delay: 2s
-
       - pkt_p530.door_close:
           on_error:
           - script.execute: boot_failed
-
       - pkt_p530.led_upper: "steady_on"
 
   - id: boot_failed
@@ -219,15 +210,10 @@ script:
       - logger.log:
           format: "Ooops, init failed!"
           level: "INFO"
-
-      - pkt_p530.beep:
-          continue_on_error: true
-          preset: "short"
-
+      - pkt_p530.beep: "short"
       - pkt_p530.door_close:
-          continue_on_error: true
-
       - pkt_p530.led_lower: "blink_fast"
+      - script.stop: feed
 
   - id: feed
     mode: single
@@ -237,22 +223,18 @@ script:
       - logger.log:
           format: "Feeding..."
           level: "INFO"
-
       - if:
           condition:
             pkt_p530.has_food
           then:
-
             - pkt_p530.door_open:
                 on_error:
                   - logger.log:
                       format: "Can't open door: abort feeding"
                       level: "ERROR"
-
                   - pkt_p530.door_close:
-                      continue_on_error: true
-
                   - pkt_p530.beep: "short"
+                  - script.stop: feed
 
             - pkt_p530.dispense:
                 portions: !lambda return portions;
@@ -260,11 +242,9 @@ script:
                   - logger.log:
                       format: "Dispensing failed"
                       level: "ERROR"
-
                   - pkt_p530.door_close:
-                      continue_on_error: true
-
                   - pkt_p530.beep: "short"
+                  - script.stop: feed
 
             - lambda: |-
                 id(daily_portions) += portions;
@@ -279,8 +259,8 @@ script:
                   - logger.log:
                       format: "Door close door: abort feeding"
                       level: "ERROR"
-
                   - pkt_p530.beep: "short"
+                  - script.stop: feed
 
             - pkt_p530.led_lower: "steady_off"
 
@@ -292,5 +272,4 @@ script:
             - logger.log:
                 format: "NO FOOD!"
                 level: "ERROR"
-
             - pkt_p530.beep: "long"

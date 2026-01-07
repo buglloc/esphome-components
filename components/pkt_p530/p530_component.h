@@ -9,7 +9,7 @@
 #include <esphome/components/uart/uart.h>
 
 #include <functional>
-#include <string_view>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -26,7 +26,7 @@ enum class ErrorCode : uint8_t {
   NOT_IMPLEMENTED = 8,
 };
 
-using ReportCallback = std::function<bool(ErrorCode, std::basic_string_view<uint8_t>)>;
+using ReportCallback = std::function<bool(ErrorCode, const std::span<const uint8_t> payload)>;
 
 struct ReportWaiter {
   uint8_t type;
@@ -76,10 +76,10 @@ class P530Component : public Component, public uart::UARTDevice {
   void check_waiter_timeouts_();
 
   bool read_packet_();
-  void handle_packet_(uint8_t type, uint8_t seq, const std::basic_string_view<uint8_t> payload);
-  void handle_status_(const std::basic_string_view<uint8_t> payload);
-  void handle_door_complete_(const std::basic_string_view<uint8_t> payload);
-  void handle_dispense_complete_(const std::basic_string_view<uint8_t> payload);
+  void handle_packet_(uint8_t type, uint8_t seq, const std::span<const uint8_t> payload);
+  void handle_status_(const std::span<const uint8_t> payload);
+  void handle_door_complete_(const std::span<const uint8_t> payload);
+  void handle_dispense_complete_(const std::span<const uint8_t> payload);
 
   // State
   uint8_t rx_buffer_[PACKET_MAX_SIZE];
