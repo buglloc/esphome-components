@@ -196,12 +196,12 @@ time:
         then:
           - script.execute:
               id: feed
-              portions: 5
+              portions: 6
       - cron: '00 00 21 * * *'
         then:
           - script.execute:
               id: feed
-              portions: 5
+              portions: 4
 
 script:
   - id: bootup
@@ -232,7 +232,7 @@ script:
           level: "INFO"
       - pkt_p530.beep: "short"
       - pkt_p530.door_close:
-      - pkt_p530.led_lower: "blink_fast"
+      - pkt_p530.led_upper: "blink_fast"
       - script.stop: feed
 
   - id: feed
@@ -247,6 +247,8 @@ script:
           condition:
             pkt_p530.has_food
           then:
+            - pkt_p530.led_lower: "blink"
+
             - pkt_p530.door_open:
                 on_error:
                   - logger.log:
