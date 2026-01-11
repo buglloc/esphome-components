@@ -80,10 +80,14 @@ void AXS15231Touchscreen::update_touches() {
     return;
   }
 
-  // TODO(buglloc): support more than one touch points?
-  uint16_t x = encode_uint16(data[4] & 0xF, data[5]);
-  uint16_t y = this->y_raw_max_ - encode_uint16(data[2] & 0xF, data[3]);
-  this->add_raw_touch_position_(0, x, y);
+  //Fix for phantom touch input when turning off backlight. https://github.com/Xinyuan-LilyGO/T-Display-S3-Long/issues/30
+  if (fingers == 1) {
+    uint16_t x = encode_uint16(data[4] & 0xF, data[5]);
+    uint16_t y = this->y_raw_max_ - encode_uint16(data[2] & 0xF, data[3]);
+    this->add_raw_touch_position_(0, x, y);
+  } else {
+    return;
+  }
 }
 
 void AXS15231Touchscreen::dump_config() {

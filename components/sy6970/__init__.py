@@ -17,10 +17,15 @@ SY6970 = sy6970_ns.class_(
 )
 
 CONF_STATE_LED_ENABLE = "state_led_enable"
+CONF_ILIM_PIN_ENABLE = "ilim_pin_enable"
+CONF_BATFET_ENABLE = "batfet_enable"
+
 CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(): cv.declare_id(SY6970),
         cv.Optional(CONF_STATE_LED_ENABLE, default=True): cv.boolean,
+        cv.Optional(CONF_ILIM_PIN_ENABLE, default=True): cv.boolean,
+        cv.Optional(CONF_BATFET_ENABLE, default=True): cv.boolean,
     }
 ).extend(
     cv.COMPONENT_SCHEMA
@@ -34,5 +39,6 @@ async def to_code(config):
     await i2c.register_i2c_device(var, config)
     await cg.register_component(var, config)
 
-    if enabled := config.get(CONF_STATE_LED_ENABLE):
-        cg.add(var.set_state_led_enabled(enabled))
+    cg.add(var.set_state_led_enabled(config.get(CONF_STATE_LED_ENABLE)))
+    cg.add(var.set_ilim_pin_enable(config.get(CONF_ILIM_PIN_ENABLE)))
+    cg.add(var.set_batfet_enabled(config.get(CONF_BATFET_ENABLE)))
