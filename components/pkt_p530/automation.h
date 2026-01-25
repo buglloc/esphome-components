@@ -258,10 +258,6 @@ template<typename... Ts> class DispenseAction : public PktAction<Ts...> {
 
  protected:
   ErrorCode do_action_(const Ts &...x) override {
-    if (!this->parent_->has_food()) {
-      return ErrorCode::NO_FOOD;
-    }
-
     uint8_t portions = this->portions_.value(x...);
     uint8_t payload[] = {portions, 0x01, 0x01, 0x50};
 
