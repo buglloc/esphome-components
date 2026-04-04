@@ -7,39 +7,47 @@
 namespace esphome::heat_word {
 
 class HeatWordComponent;
-using Phrase = uint32_t;
 
-enum class WordKind : uint8_t {
-  HOUR = 0,
+enum class ColorPalette : uint8_t {
+  DONE = 0,
+  ERROR,
+  HEAT,
+  HOUR,
+  IDLE,
   MINUTE,
   MISC,
-  DONE,
-  HEAT,
-  ERRORS,
-  BACKGROUND,
-  MAX_KIND,
+  OFF,
+  PAUSE,
+  MAX_COLOR,
 };
 
 enum class PrintState : uint8_t {
-  IDLE = 0,
+  UNAVAILABLE = 0,
+  IDLE,
   HEATING,
   PRINTING,
   PAUSED,
+  RESUMING,
   ERROR,
   DONE,
+};
+
+struct Phrase {
+  uint32_t mask;
+  ColorPalette bg_color;
 };
 
 struct Word {
   const uint8_t *cells;
   uint8_t len;
-  WordKind category;
+  ColorPalette color;
   const char *name;
 
   void render(HeatWordComponent *comp, light::AddressableLight *strip) const;
 };
 
-Phrase build_phrase(PrintState state, uint32_t remaining_seconds, uint32_t total_seconds);
+Phrase build_phrase(PrintState state, uint32_t remaining_seconds);
 
-void render_phrase(Phrase phrase, HeatWordComponent *comp, light::AddressableLight *strip);
+void render_phrase(const Phrase &phrase, HeatWordComponent *comp, light::AddressableLight *strip);
 
 }  // namespace esphome::heat_word

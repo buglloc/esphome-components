@@ -27,45 +27,39 @@ class HeatWordComponent : public PollingComponent, public api::CustomAPIDevice {
 
   void set_light_state(light::LightState *light_state) { this->light_state_ = light_state; }
 
-  void set_word_kind_hsv(WordKind cat, uint8_t hue, uint8_t saturation, uint8_t value) {
-    this->words_color_[static_cast<size_t>(cat)] = light::ESPHSVColor(hue, saturation, value).to_rgb();
+  void set_color_hsv(ColorPalette palette, uint8_t hue, uint8_t saturation, uint8_t value) {
+    this->color_palette_[static_cast<size_t>(palette)] = light::ESPHSVColor(hue, saturation, value).to_rgb();
   }
 
   void set_print_status_entity(const char *entity_id) { this->print_status_entity_ = entity_id; }
   void set_remain_time_entity(const char *entity_id) { this->remain_time_entity_ = entity_id; }
   void set_elapsed_time_entity(const char *entity_id) { this->elapsed_time_entity_ = entity_id; }
-  void set_total_time_entity(const char *entity_id) { this->total_time_entity_ = entity_id; }
-  void add_print_status(const char *ha_status, PrintState state);
-
-  void on_print_state(PrintState state);
-  void on_remaining_seconds(uint32_t sec);
-  void on_total_seconds(uint32_t sec);
-  void redraw();
-
+  void set_done_timeout_ms(uint32_t ms) { this->done_timeout_ms_ = ms; }
   void set_brightness(float brightness) {
     if (this->light_state_ == nullptr)
       return;
     this->light_state_->make_call().set_brightness(clamp(brightness, 0.0f, 1.0f)).perform();
   }
+  void add_print_status(const char *ha_status, PrintState state);
 
-  /// Resolved RGB for a semantic category (after HSV→RGB at config time).
-  Color word_color(WordKind kind) const;
+  void on_print_state(PrintState state);
+  void on_remaining_seconds(uint32_t sec);
+  void redraw();
+  Color lookup_color(ColorPalette palette) const;
 
  protected:
   light::LightState *light_state_{nullptr};
 
-  std::array<Color, static_cast<size_t>(WordKind::MAX_KIND)> words_color_{};
+  std::array<Color, static_cast<size_t>(ColorPalette::MAX_COLOR)> color_palette_{};
 
   PrintState state_{PrintState::IDLE};
   uint32_t remaining_seconds_{0};
   uint32_t elapsed_seconds_{0};
-  uint32_t total_seconds_{0};
-  uint32_t last_phrase_mask_{~0u};  // ~0u = invalid sentinel, forces log on first draw
+  uint32_t done_timeout_ms_{0};
 
   const char *print_status_entity_{nullptr};
   const char *remain_time_entity_{nullptr};
   const char *elapsed_time_entity_{nullptr};
-  const char *total_time_entity_{nullptr};
 
   struct PrintStateMapping {
     const char *ha_status;

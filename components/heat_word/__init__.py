@@ -14,7 +14,7 @@ HeatWordSetBrightnessAction = heat_word_ns.class_(
     "HeatWordSetBrightnessAction", automation.Action
 )
 PrintState = heat_word_ns.enum("PrintState", is_class=True)
-WordKind = heat_word_ns.enum("WordKind", is_class=True)
+ColorPalette = heat_word_ns.enum("ColorPalette", is_class=True)
 HeatWordLightDisplay = heat_word_ns.class_(
     "HeatWordLightDisplay", light.AddressableLight
 )
@@ -27,9 +27,13 @@ CONF_HEAT = "heat"
 CONF_DONE = "done"
 CONF_HOUR = "hour"
 CONF_MINUTE = "minute"
-CONF_BACKGROUND = "background"
+CONF_PAUSE = "pause"
+CONF_OFF = "off"
+CONF_IDLE = "idle"
+
 CONF_REMAINING_TIME = "remaining_time"
 CONF_TOTAL_TIME = "total_time"
+CONF_DONE_TIMEOUT = "done_timeout"
 
 CONF_HUE = "hue"
 CONF_SATURATION = "saturation"
@@ -39,7 +43,6 @@ CONF_ENTITY_PREFIX = "entity_prefix"
 CONF_PRINT_STATUS_ENTITY = "print_status_entity"
 CONF_REMAIN_TIME_ENTITY = "remain_time_entity"
 CONF_ELAPSED_TIME_ENTITY = "elapsed_time_entity"
-CONF_TOTAL_TIME_ENTITY = "total_time_entity"
 CONF_PRINT_STATUSES = "print_statuses"
 
 # Default Anycubic Kobra S1 entity suffixes
@@ -48,29 +51,36 @@ _ENTITY_SUFFIX_REMAIN_TIME = "_print_remaining_time"
 _ENTITY_SUFFIX_ELAPSED_TIME = "_print_time"
 
 DEFAULT_PRINT_STATUS_MAPPINGS = {
+    "unavailable": "unavailable",
+    "unknown": "idle",
     "preheating": "heating",
     "auto_leveling": "heating",
     "printing": "printing",
     "paused": "paused",
+    "resuming": "resuming",
     "failed": "error",
     "finished": "done",
 }
 
-WORD_KIND_ENUM = {
-    CONF_HOUR: WordKind.HOUR,
-    CONF_MINUTE: WordKind.MINUTE,
-    CONF_MISC: WordKind.MISC,
-    CONF_DONE: WordKind.DONE,
-    CONF_HEAT: WordKind.HEAT,
-    CONF_ERROR: WordKind.ERRORS,
-    CONF_BACKGROUND: WordKind.BACKGROUND,
+COLORS_ENUM = {
+    CONF_DONE: ColorPalette.DONE,
+    CONF_ERROR: ColorPalette.ERROR,
+    CONF_HEAT: ColorPalette.HEAT,
+    CONF_HOUR: ColorPalette.HOUR,
+    CONF_IDLE: ColorPalette.IDLE,
+    CONF_MINUTE: ColorPalette.MINUTE,
+    CONF_MISC: ColorPalette.MISC,
+    CONF_OFF: ColorPalette.OFF,
+    CONF_PAUSE: ColorPalette.PAUSE,
 }
 
 PRINT_STATE_ENUM = {
+    "unavailable": PrintState.UNAVAILABLE,
     "idle": PrintState.IDLE,
     "heating": PrintState.HEATING,
     "printing": PrintState.PRINTING,
     "paused": PrintState.PAUSED,
+    "resuming": PrintState.RESUMING,
     "error": PrintState.ERROR,
     "done": PrintState.DONE,
 }
@@ -85,51 +95,62 @@ HSV_SCHEMA = cv.Schema(
 
 COLORS_SCHEMA = cv.Schema(
     {
-        cv.Optional(CONF_MISC): HSV_SCHEMA,
+        cv.Optional(CONF_DONE): HSV_SCHEMA,
         cv.Optional(CONF_ERROR): HSV_SCHEMA,
         cv.Optional(CONF_HEAT): HSV_SCHEMA,
-        cv.Optional(CONF_DONE): HSV_SCHEMA,
         cv.Optional(CONF_HOUR): HSV_SCHEMA,
+        cv.Optional(CONF_IDLE): HSV_SCHEMA,
         cv.Optional(CONF_MINUTE): HSV_SCHEMA,
-        cv.Optional(CONF_BACKGROUND): HSV_SCHEMA,
+        cv.Optional(CONF_MISC): HSV_SCHEMA,
+        cv.Optional(CONF_OFF): HSV_SCHEMA,
+        cv.Optional(CONF_PAUSE): HSV_SCHEMA,
     }
 )
 
 COLOR_DEFAULTS = {
-    CONF_MISC: {
-        CONF_HUE: 220.0,
-        CONF_SATURATION: 0.75,
-        CONF_BRIGHTNESS: 0.6,
+    # Statuses
+    CONF_DONE: {
+        CONF_HUE: 140.0,
+        CONF_SATURATION: 0.60,
+        CONF_BRIGHTNESS: 0.70,
     },
     CONF_ERROR: {
-        CONF_HUE: 0.0,
-        CONF_SATURATION: 0.875,
-        CONF_BRIGHTNESS: 0.6,
+        CONF_HUE: 5.0,
+        CONF_SATURATION: 0.85,
+        CONF_BRIGHTNESS: 0.75,
     },
     CONF_HEAT: {
-        CONF_HUE: 30.0,
+        CONF_HUE: 48.0,
         CONF_SATURATION: 1.0,
-        CONF_BRIGHTNESS: 0.6,
+        CONF_BRIGHTNESS: 0.7,
     },
-    CONF_DONE: {
-        CONF_HUE: 128.571,
-        CONF_SATURATION: 0.875,
-        CONF_BRIGHTNESS: 0.6,
-    },
+    # Time
     CONF_HOUR: {
-        CONF_HUE: 0.0,
-        CONF_SATURATION: 0.0,
-        CONF_BRIGHTNESS: 0.6,
+        CONF_HUE: 45.0,
+        CONF_SATURATION: 0.50,
+        CONF_BRIGHTNESS: 0.78,
     },
     CONF_MINUTE: {
-        CONF_HUE: 240.0,
-        CONF_SATURATION: 0.37,
-        CONF_BRIGHTNESS: 0.6,
+        CONF_HUE: 215.0,
+        CONF_SATURATION: 0.75,
+        CONF_BRIGHTNESS: 0.80,
     },
-    CONF_BACKGROUND: {
-        CONF_HUE: 0.0,
-        CONF_SATURATION: 0.0,
-        CONF_BRIGHTNESS: 0.2,
+    # Special
+    CONF_MISC: {
+        CONF_HUE: 220.0,
+        CONF_SATURATION: 0.15,
+        CONF_BRIGHTNESS: 0.45,
+    },
+    CONF_IDLE: {
+        CONF_HUE: 240.0,
+        CONF_SATURATION: 0.10,
+        CONF_BRIGHTNESS: 0.22,
+    },
+    CONF_OFF: {CONF_HUE: 0.0, CONF_SATURATION: 0.0, CONF_BRIGHTNESS: 0.0},
+    CONF_PAUSE: {
+        CONF_HUE: 240.0,
+        CONF_SATURATION: 0.10,
+        CONF_BRIGHTNESS: 0.30,
     },
 }
 
@@ -171,7 +192,6 @@ HOMEASSISTANT_SCHEMA = cv.All(
             cv.Optional(CONF_PRINT_STATUS_ENTITY): cv.string,
             cv.Optional(CONF_REMAIN_TIME_ENTITY): cv.string,
             cv.Optional(CONF_ELAPSED_TIME_ENTITY): cv.string,
-            cv.Optional(CONF_TOTAL_TIME_ENTITY): cv.string,
             cv.Optional(
                 CONF_PRINT_STATUSES, default=DEFAULT_PRINT_STATUS_MAPPINGS
             ): cv.Schema(
@@ -197,6 +217,9 @@ CONFIG_SCHEMA = cv.All(
                 light.LightType.ADDRESSABLE,
                 default_restore_mode="RESTORE_DEFAULT_ON",
             ),
+            cv.Optional(
+                CONF_DONE_TIMEOUT, default="5min"
+            ): cv.positive_time_period_milliseconds,
             cv.Optional(CONF_HOMEASSISTANT): HOMEASSISTANT_SCHEMA,
         }
     ).extend(cv.polling_component_schema("1s")),
@@ -218,9 +241,11 @@ async def to_code(config):
     cg.add(var.set_light_state(matrix_state))
 
     colors_cfg = config[CONF_COLORS]
-    for key, kind in WORD_KIND_ENUM.items():
+    for key, kind in COLORS_ENUM.items():
         h8, s8, v8 = _hsv8_from_fragment(colors_cfg.get(key, {}), COLOR_DEFAULTS[key])
-        cg.add(var.set_word_kind_hsv(kind, h8, s8, v8))
+        cg.add(var.set_color_hsv(kind, h8, s8, v8))
+
+    cg.add(var.set_done_timeout_ms(config[CONF_DONE_TIMEOUT]))
 
     ha_cfg = config.get(CONF_HOMEASSISTANT, {})
     state_mappings = ha_cfg.get(CONF_PRINT_STATUSES, [])
@@ -233,8 +258,6 @@ async def to_code(config):
             cg.add(var.set_remain_time_entity(ha_cfg[CONF_REMAIN_TIME_ENTITY]))
         if CONF_ELAPSED_TIME_ENTITY in ha_cfg:
             cg.add(var.set_elapsed_time_entity(ha_cfg[CONF_ELAPSED_TIME_ENTITY]))
-        if CONF_TOTAL_TIME_ENTITY in ha_cfg:
-            cg.add(var.set_total_time_entity(ha_cfg[CONF_TOTAL_TIME_ENTITY]))
         for ha_status, esp_state in state_mappings.items():
             cg.add(var.add_print_status(ha_status, PRINT_STATE_ENUM[esp_state.lower()]))
 

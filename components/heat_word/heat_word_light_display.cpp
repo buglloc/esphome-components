@@ -80,8 +80,7 @@ int32_t HeatWordLightDisplay::to_physical_index_(int32_t logical_index) const {
   // Both panels: data in bottom-left, row serpentine upward, out top-left.
   // Bottom row (y=7) left→right; each row above alternates direction.
   const int32_t row_from_bottom = 7 - y;
-  const int32_t column =
-      (row_from_bottom % 2) == 0 ? panel_x : (7 - panel_x);
+  const int32_t column = (row_from_bottom % 2) == 0 ? panel_x : (7 - panel_x);
   const int32_t panel_offset = row_from_bottom * 8 + column;
 
   // Right matrix first in the chain (0..63), then left (64..127).

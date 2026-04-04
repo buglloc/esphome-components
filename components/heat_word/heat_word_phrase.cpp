@@ -65,40 +65,33 @@ static const uint8_t CELLS_DONE[] = {123, 124, 125, 126};
 
 // Word definitions table — order must match WordId enum.
 const Word WORDS[WORD_COUNT] = {
-    /* WORD_MORE      */ {CELLS_MORE, sizeof(CELLS_MORE), WordKind::MISC, "MORE"},
-    /* WORD_LESS      */ {CELLS_LESS, sizeof(CELLS_LESS), WordKind::MISC, "LESS"},
-    /* WORD_THAN      */ {CELLS_THAN, sizeof(CELLS_THAN), WordKind::MISC, "THAN"},
-    /* WORD_ONE       */ {CELLS_ONE, sizeof(CELLS_ONE), WordKind::HOUR, "ONE"},
-    /* WORD_TWO       */ {CELLS_TWO, sizeof(CELLS_TWO), WordKind::HOUR, "TWO"},
-    /* WORD_THREE     */ {CELLS_THREE, sizeof(CELLS_THREE), WordKind::HOUR, "THREE"},
-    /* WORD_FOUR      */ {CELLS_FOUR, sizeof(CELLS_FOUR), WordKind::HOUR, "FOUR"},
-    /* WORD_FIVE_PLUS */ {CELLS_FIVE_PLUS, sizeof(CELLS_FIVE_PLUS), WordKind::MINUTE, "FIVE"},
-    /* WORD_SIX       */ {CELLS_SIX, sizeof(CELLS_SIX), WordKind::HOUR, "SIX"},
-    /* WORD_SEVEN     */ {CELLS_SEVEN, sizeof(CELLS_SEVEN), WordKind::HOUR, "SEVEN"},
-    /* WORD_EIGHT     */ {CELLS_EIGHT, sizeof(CELLS_EIGHT), WordKind::HOUR, "EIGHT"},
-    /* WORD_NINE      */ {CELLS_NINE, sizeof(CELLS_NINE), WordKind::HOUR, "NINE"},
-    /* WORD_TEN_HOUR  */ {CELLS_TEN_HOUR, sizeof(CELLS_TEN_HOUR), WordKind::HOUR, "TEN"},
-    /* WORD_ELEVEN    */ {CELLS_ELEVEN, sizeof(CELLS_ELEVEN), WordKind::HOUR, "ELEVEN"},
-    /* WORD_HEAT      */ {CELLS_HEAT, sizeof(CELLS_HEAT), WordKind::HEAT, "HEAT"},
-    /* WORD_TWELVE    */ {CELLS_TWELVE, sizeof(CELLS_TWELVE), WordKind::HOUR, "TWELVE"},
-    /* WORD_ERROR     */ {CELLS_ERROR, sizeof(CELLS_ERROR), WordKind::ERRORS, "ERROR"},
-    /* WORD_TWENTY    */ {CELLS_TWENTY, sizeof(CELLS_TWENTY), WordKind::MINUTE, "TWENTY"},
-    /* WORD_TEN_MIN   */ {CELLS_TEN_MIN, sizeof(CELLS_TEN_MIN), WordKind::MINUTE, "TEN"},
-    /* WORD_THIRTY    */ {CELLS_THIRTY, sizeof(CELLS_THIRTY), WordKind::MINUTE, "THIRTY"},
-    /* WORD_FORTY     */ {CELLS_FORTY, sizeof(CELLS_FORTY), WordKind::MINUTE, "FORTY"},
-    /* WORD_FIVE_TAIL */ {CELLS_FIVE_TAIL, sizeof(CELLS_FIVE_TAIL), WordKind::MINUTE, "FIVE"},
-    /* WORD_FIFTY     */ {CELLS_FIFTY, sizeof(CELLS_FIFTY), WordKind::MINUTE, "FIFTY"},
-    /* WORD_LEFT      */ {CELLS_LEFT, sizeof(CELLS_LEFT), WordKind::MISC, "LEFT"},
-    /* WORD_DONE      */ {CELLS_DONE, sizeof(CELLS_DONE), WordKind::DONE, "DONE"},
+    /* WORD_MORE      */ {CELLS_MORE, sizeof(CELLS_MORE), ColorPalette::MISC, "MORE"},
+    /* WORD_LESS      */ {CELLS_LESS, sizeof(CELLS_LESS), ColorPalette::MISC, "LESS"},
+    /* WORD_THAN      */ {CELLS_THAN, sizeof(CELLS_THAN), ColorPalette::MISC, "THAN"},
+    /* WORD_ONE       */ {CELLS_ONE, sizeof(CELLS_ONE), ColorPalette::HOUR, "ONE"},
+    /* WORD_TWO       */ {CELLS_TWO, sizeof(CELLS_TWO), ColorPalette::HOUR, "TWO"},
+    /* WORD_THREE     */ {CELLS_THREE, sizeof(CELLS_THREE), ColorPalette::HOUR, "THREE"},
+    /* WORD_FOUR      */ {CELLS_FOUR, sizeof(CELLS_FOUR), ColorPalette::HOUR, "FOUR"},
+    /* WORD_FIVE_PLUS */ {CELLS_FIVE_PLUS, sizeof(CELLS_FIVE_PLUS), ColorPalette::MINUTE, "FIVE"},
+    /* WORD_SIX       */ {CELLS_SIX, sizeof(CELLS_SIX), ColorPalette::HOUR, "SIX"},
+    /* WORD_SEVEN     */ {CELLS_SEVEN, sizeof(CELLS_SEVEN), ColorPalette::HOUR, "SEVEN"},
+    /* WORD_EIGHT     */ {CELLS_EIGHT, sizeof(CELLS_EIGHT), ColorPalette::HOUR, "EIGHT"},
+    /* WORD_NINE      */ {CELLS_NINE, sizeof(CELLS_NINE), ColorPalette::HOUR, "NINE"},
+    /* WORD_TEN_HOUR  */ {CELLS_TEN_HOUR, sizeof(CELLS_TEN_HOUR), ColorPalette::HOUR, "TEN"},
+    /* WORD_ELEVEN    */ {CELLS_ELEVEN, sizeof(CELLS_ELEVEN), ColorPalette::HOUR, "ELEVEN"},
+    /* WORD_HEAT      */ {CELLS_HEAT, sizeof(CELLS_HEAT), ColorPalette::HEAT, "HEAT"},
+    /* WORD_TWELVE    */ {CELLS_TWELVE, sizeof(CELLS_TWELVE), ColorPalette::HOUR, "TWELVE"},
+    /* WORD_ERROR     */ {CELLS_ERROR, sizeof(CELLS_ERROR), ColorPalette::ERROR, "ERROR"},
+    /* WORD_TWENTY    */ {CELLS_TWENTY, sizeof(CELLS_TWENTY), ColorPalette::MINUTE, "TWENTY"},
+    /* WORD_TEN_MIN   */ {CELLS_TEN_MIN, sizeof(CELLS_TEN_MIN), ColorPalette::MINUTE, "TEN"},
+    /* WORD_THIRTY    */ {CELLS_THIRTY, sizeof(CELLS_THIRTY), ColorPalette::MINUTE, "THIRTY"},
+    /* WORD_FORTY     */ {CELLS_FORTY, sizeof(CELLS_FORTY), ColorPalette::MINUTE, "FORTY"},
+    /* WORD_FIVE_TAIL */ {CELLS_FIVE_TAIL, sizeof(CELLS_FIVE_TAIL), ColorPalette::MINUTE, "FIVE"},
+    /* WORD_FIFTY     */ {CELLS_FIFTY, sizeof(CELLS_FIFTY), ColorPalette::MINUTE, "FIFTY"},
+    /* WORD_LEFT      */ {CELLS_LEFT, sizeof(CELLS_LEFT), ColorPalette::MISC, "LEFT"},
+    /* WORD_DONE      */ {CELLS_DONE, sizeof(CELLS_DONE), ColorPalette::DONE, "DONE"},
 };
 static_assert(std::size(WORDS) == WORD_COUNT, "WORDS table size mismatch");
-
-void Word::render(HeatWordComponent *comp, light::AddressableLight *strip) const {
-  const Color col = comp->word_color(this->category);
-  for (uint8_t i = 0; i < this->len; i++) {
-    (*strip)[this->cells[i]] = col;
-  }
-}
 
 // --- Phrase building ---
 
@@ -115,28 +108,29 @@ static WordId hour_word(uint8_t h) {
 }
 
 // Indexed by snapped / 5: index 0 = 0 min (nothing), 1 = 5 min, ..., 11 = 55 min.
-static constexpr Phrase MINUTE_MASKS[12] = {
+static constexpr uint32_t MINUTE_MASKS[12] = {
     0,                                              // 0 min
-    (1u << WORD_FIVE_PLUS),                         // 5 min
+    (1u << WORD_FIVE_PLUS),                         // 5 min  (standalone, row-2 FIVE is fine)
     (1u << WORD_TEN_MIN),                           // 10 min
-    (1u << WORD_TEN_MIN) | (1u << WORD_FIVE_PLUS),  // 15 min
+    (1u << WORD_TEN_MIN) | (1u << WORD_FIVE_TAIL),  // 15 min (TEN row-5, FIVE row-6 → "TEN FIVE")
     (1u << WORD_TWENTY),                            // 20 min
-    (1u << WORD_TWENTY) | (1u << WORD_FIVE_PLUS),   // 25 min
+    (1u << WORD_TWENTY) | (1u << WORD_FIVE_TAIL),   // 25 min (TWENTY row-5, FIVE row-6 → "TWENTY FIVE")
     (1u << WORD_THIRTY),                            // 30 min
-    (1u << WORD_THIRTY) | (1u << WORD_FIVE_PLUS),   // 35 min
+    (1u << WORD_THIRTY) | (1u << WORD_FIVE_TAIL),   // 35 min (THIRTY row-6/0-5, FIVE row-6/12-15 → "THIRTY FIVE")
     (1u << WORD_FORTY),                             // 40 min
-    (1u << WORD_FORTY) | (1u << WORD_FIVE_TAIL),    // 45 min
+    (1u << WORD_FORTY) | (1u << WORD_FIVE_TAIL),    // 45 min (FORTY row-6, FIVE row-6 → "FORTY FIVE")
     (1u << WORD_FIFTY),                             // 50 min
-    (1u << WORD_FIFTY) | (1u << WORD_FIVE_PLUS),    // 55 min
+    (1u << WORD_FIFTY) | (1u << WORD_FIVE_TAIL),    // 55 min (FIVE_TAIL row-6 adjacent to FIFTY row-7)
 };
 
-static void mark_minute_words(Phrase &phrase, uint8_t snapped) {
+static void mark_minute_words(uint32_t &phrase_mask, uint8_t snapped) {
   const uint8_t idx = snapped / 5;
   if (idx < std::size(MINUTE_MASKS))
-    phrase |= MINUTE_MASKS[idx];
+    phrase_mask |= MINUTE_MASKS[idx];
 }
 
-static void mark_duration_words(Phrase &phrase, uint32_t seconds) {
+// Returns the display-snapped time in seconds (nearest 5-minute boundary).
+static uint32_t snap_to_display(uint32_t seconds) {
   uint32_t h = seconds / 3600;
   const uint32_t m = (seconds % 3600) / 60;
   uint8_t snapped = static_cast<uint8_t>(((m + 2) / 5) * 5);
@@ -144,56 +138,98 @@ static void mark_duration_words(Phrase &phrase, uint32_t seconds) {
     snapped = 0;
     h++;
   }
-  if (h >= 1) {
-    const uint8_t hh = static_cast<uint8_t>(h > 12 ? 12 : h);
-    phrase |= (1u << hour_word(hh));
+
+  // Anything over 12h snaps to exactly 12h
+  if (h > 12)
+    return 12 * 3600;
+
+  if (snapped == 0 && h == 0 && seconds > 0) {
+    snapped = 5;
   }
-  mark_minute_words(phrase, snapped);
+
+  return h * 3600 + static_cast<uint32_t>(snapped) * 60;
 }
 
-Phrase build_phrase(PrintState state, uint32_t remaining_seconds, uint32_t total_seconds) {
-  Phrase phrase = 0;
+static void mark_duration_words(uint32_t &phrase_mask, uint32_t seconds) {
+  const uint32_t snapped_secs = snap_to_display(seconds);
+  const uint32_t h = snapped_secs / 3600;
+  const uint8_t snapped = static_cast<uint8_t>((snapped_secs % 3600) / 60);
+
+  if (h >= 1) {
+    const uint8_t hh = static_cast<uint8_t>(h > 12 ? 12 : h);
+    phrase_mask |= (1u << hour_word(hh));
+  }
+
+  mark_minute_words(phrase_mask, snapped);
+}
+
+Phrase build_phrase(PrintState state, uint32_t remaining_seconds) {
+  Phrase phrase{
+      .mask = 0,
+      .bg_color = ColorPalette::OFF,
+  };
+
   switch (state) {
+    case PrintState::UNAVAILABLE:
+      break;
+
     case PrintState::IDLE:
+      phrase.bg_color = ColorPalette::IDLE;
       break;
+
     case PrintState::HEATING:
-      phrase |= (1u << WORD_HEAT);
-      if (remaining_seconds > 0)
-        mark_duration_words(phrase, remaining_seconds);
+      phrase.mask = (1u << WORD_HEAT);
       break;
-    case PrintState::PRINTING:
-      if (total_seconds > 0) {
-        const uint64_t twice = static_cast<uint64_t>(remaining_seconds) * 2;
-        if (twice > total_seconds) {
-          phrase |= (1u << WORD_MORE) | (1u << WORD_THAN);
-        } else if (twice < total_seconds && remaining_seconds > 0) {
-          phrase |= (1u << WORD_LESS) | (1u << WORD_THAN);
-        }
-      }
-      if (remaining_seconds > 0)
-        mark_duration_words(phrase, remaining_seconds);
-      break;
-    case PrintState::PAUSED:
-      phrase |= (1u << WORD_LEFT);
-      if (remaining_seconds > 0)
-        mark_duration_words(phrase, remaining_seconds);
-      break;
+
     case PrintState::ERROR:
-      phrase |= (1u << WORD_ERROR);
+      phrase.mask = (1u << WORD_ERROR);
       break;
+
     case PrintState::DONE:
-      phrase |= (1u << WORD_DONE);
+      phrase.mask = (1u << WORD_DONE);
+      break;
+
+    case PrintState::PAUSED:
+      phrase.bg_color = ColorPalette::PAUSE;
+      [[fallthrough]];
+
+    case PrintState::RESUMING:
+      [[fallthrough]];
+
+    case PrintState::PRINTING:
+      if (remaining_seconds == 0)
+        break;
+
+      // MORE/LESS THAN qualifies the displayed (snapped) value:
+      // "MORE THAN TWENTY FIVE" = actual remaining > 25 min displayed
+      const uint32_t snapped_secs = snap_to_display(remaining_seconds);
+      if (remaining_seconds > snapped_secs) {
+        phrase.mask |= (1u << WORD_MORE) | (1u << WORD_THAN);
+      } else if (remaining_seconds < snapped_secs) {
+        phrase.mask |= (1u << WORD_LESS) | (1u << WORD_THAN);
+      }
+      mark_duration_words(phrase.mask, remaining_seconds);
+      phrase.mask |= (1u << WORD_LEFT);
       break;
   }
+
   return phrase;
 }
 
-void render_phrase(Phrase phrase, HeatWordComponent *comp, light::AddressableLight *strip) {
-  for (int32_t i = 0; i < STRIP_SIZE; i++)
-    (*strip)[i] = comp->word_color(WordKind::BACKGROUND);
+void Word::render(HeatWordComponent *comp, light::AddressableLight *strip) const {
+  Color col = comp->lookup_color(this->color);
+  for (uint8_t i = 0; i < this->len; i++) {
+    (*strip)[this->cells[i]] = col;
+  }
+}
+
+void render_phrase(const Phrase &phrase, HeatWordComponent *comp, light::AddressableLight *strip) {
+  for (int32_t i = 0; i < STRIP_SIZE; i++) {
+    (*strip)[i] = comp->lookup_color(phrase.bg_color);
+  }
 
   for (uint8_t w = 0; w < WORD_COUNT; w++) {
-    if (phrase & (1u << w))
+    if (phrase.mask & (1u << w))
       WORDS[w].render(comp, strip);
   }
 }
