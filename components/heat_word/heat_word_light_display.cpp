@@ -76,14 +76,15 @@ int32_t HeatWordLightDisplay::to_physical_index_(int32_t logical_index) const {
   const bool is_left_panel = x < 8;
   const int32_t panel_x = is_left_panel ? x : (x - 8);
 
-  // Entry is at top-right of each panel.
-  // Even rows go right-to-left, odd rows left-to-right.
-  const bool reverse_row = (y % 2) == 0;
-  const int32_t column = reverse_row ? (7 - panel_x) : panel_x;
-  const int32_t panel_offset = y * 8 + column;
+  // Logical: x 0..15 left→right, y 0..7 top→bottom.
+  // Both panels: data in bottom-left, row serpentine upward, out top-left.
+  // Bottom row (y=7) left→right; each row above alternates direction.
+  const int32_t row_from_bottom = 7 - y;
+  const int32_t column =
+      (row_from_bottom % 2) == 0 ? panel_x : (7 - panel_x);
+  const int32_t panel_offset = row_from_bottom * 8 + column;
 
-  // Right panel is physically first in the chain: 0..63
-  // Left panel is physically second in the chain: 64..127
+  // Right matrix first in the chain (0..63), then left (64..127).
   return is_left_panel ? (panel_offset + 64) : panel_offset;
 }
 
