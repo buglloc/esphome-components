@@ -198,9 +198,6 @@ Phrase build_phrase(PrintState state, uint32_t remaining_seconds) {
       [[fallthrough]];
 
     case PrintState::PRINTING:
-      if (remaining_seconds == 0)
-        break;
-
       // MORE/LESS THAN qualifies the displayed (snapped) value:
       // "MORE THAN TWENTY FIVE" = actual remaining > 25 min displayed
       const uint32_t snapped_secs = snap_to_display(remaining_seconds);
