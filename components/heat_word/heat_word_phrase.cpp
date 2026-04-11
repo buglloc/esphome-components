@@ -140,10 +140,11 @@ static uint32_t snap_to_display(uint32_t seconds) {
   }
 
   // Anything over 12h snaps to exactly 12h
-  if (h > 12)
+  if (h > 12) {
     return 12 * 3600;
+  }
 
-  if (snapped == 0 && h == 0 && seconds > 0) {
+  if (snapped == 0 && h == 0) {
     snapped = 5;
   }
 
