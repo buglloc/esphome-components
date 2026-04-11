@@ -112,45 +112,45 @@ COLOR_DEFAULTS = {
     CONF_DONE: {
         CONF_HUE: 140.0,
         CONF_SATURATION: 0.60,
-        CONF_BRIGHTNESS: 0.70,
+        CONF_BRIGHTNESS: 0.80,
     },
     CONF_ERROR: {
         CONF_HUE: 5.0,
         CONF_SATURATION: 0.85,
-        CONF_BRIGHTNESS: 0.75,
+        CONF_BRIGHTNESS: 0.85,
     },
     CONF_HEAT: {
         CONF_HUE: 48.0,
         CONF_SATURATION: 1.0,
-        CONF_BRIGHTNESS: 0.7,
+        CONF_BRIGHTNESS: 0.8,
     },
     # Time
     CONF_HOUR: {
         CONF_HUE: 45.0,
         CONF_SATURATION: 0.50,
-        CONF_BRIGHTNESS: 0.78,
+        CONF_BRIGHTNESS: 0.88,
     },
     CONF_MINUTE: {
-        CONF_HUE: 215.0,
-        CONF_SATURATION: 0.75,
-        CONF_BRIGHTNESS: 0.80,
+        CONF_HUE: 300.0,
+        CONF_SATURATION: 0.60,
+        CONF_BRIGHTNESS: 0.88,
     },
     # Special
     CONF_MISC: {
         CONF_HUE: 220.0,
         CONF_SATURATION: 0.15,
-        CONF_BRIGHTNESS: 0.45,
+        CONF_BRIGHTNESS: 0.60,
     },
     CONF_IDLE: {
         CONF_HUE: 240.0,
         CONF_SATURATION: 0.10,
-        CONF_BRIGHTNESS: 0.22,
+        CONF_BRIGHTNESS: 0.35,
     },
     CONF_OFF: {CONF_HUE: 0.0, CONF_SATURATION: 0.0, CONF_BRIGHTNESS: 0.0},
     CONF_PAUSE: {
         CONF_HUE: 240.0,
         CONF_SATURATION: 0.10,
-        CONF_BRIGHTNESS: 0.30,
+        CONF_BRIGHTNESS: 0.35,
     },
 }
 
